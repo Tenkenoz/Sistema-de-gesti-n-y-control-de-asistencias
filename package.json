@@ -1,0 +1,22 @@
+{
+  "name": "sistema_transcontrol_electron_app",
+  "version": "1.0.0",
+  "description": "Sistema de Gestión y Control de Transporte de la materia de Pruebas de Software 30729 de la Universidad de las Fuerzas Armadas ESPE",
+  "main": "Frontend/main.js",
+"scripts": {
+  "start": "electron ."
+},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tenkenoz/Sistema-de-gesti-n-y-control-de-asistencias.git"
+  },
+  "author": "Jonathan Jaguaco, Alexander Ñacato, Leidy Saraguro, Erick Obando",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Tenkenoz/Sistema-de-gesti-n-y-control-de-asistencias/issues"
+  },
+  "homepage": "https://github.com/Tenkenoz/Sistema-de-gesti-n-y-control-de-asistencias#readme",
+  "devDependencies": {
+    "electron": "^41.3.0"
+  }
+}
