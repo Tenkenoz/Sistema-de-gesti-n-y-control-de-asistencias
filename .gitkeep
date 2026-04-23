@@ -1,9 +1,0 @@
-touch Frontend/views/.gitkeep
-touch Frontend/controllers/.gitkeep
-touch Frontend/models/.gitkeep
-touch Frontend/assets/.gitkeep
-touch Backend/controllers/.gitkeep
-touch Backend/models/.gitkeep
-touch Backend/routes/.gitkeep
-touch Tests/caja_negra/.gitkeep
-touch Tests/caja_blanca/.gitkeep

@@ -4,7 +4,8 @@
   "description": "Sistema de Gestión y Control de Transporte de la materia de Pruebas de Software 30729 de la Universidad de las Fuerzas Armadas ESPE",
   "main": "Frontend/main.js",
 "scripts": {
-  "start": "electron ."
+  "start": "electron .",
+  "dev" : "electron ."
 },
   "repository": {
     "type": "git",
