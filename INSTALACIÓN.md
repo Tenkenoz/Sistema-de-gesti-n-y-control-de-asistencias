@@ -30,3 +30,5 @@ Terminal 1 (Backend):
 
 Terminal 2 (Electron):
    npm start
+
+   
