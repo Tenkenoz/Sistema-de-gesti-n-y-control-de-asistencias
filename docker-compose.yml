@@ -1,18 +1,18 @@
-#Aqui falta el servicio del frontend, pero lo agregare despues, por ahora solo el backend y la base de datos
 services:
-  # Servicio de Base de Datos
+  # ── BASE DE DATOS ──────────────────────────────────────
   db:
-    image: postgres:17-alpine #Version de postgress 17
+    image: postgres:17-alpine
     container_name: transcontrol_db
     restart: always
     environment:
       POSTGRES_USER: transuser
-      POSTGRES_PASSWORD: nueva_password   # ← CAMBIADO para coincidir con .env
+      POSTGRES_PASSWORD: nueva_password
       POSTGRES_DB: transcontrol
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U transuser -d transcontrol"]
       interval: 5s
@@ -20,7 +20,7 @@ services:
       retries: 5
       start_period: 10s
 
-  # Servicio del Backend (FastAPI)
+  # ── BACKEND (FASTAPI) ──────────────────────────────────
   backend:
     build: ./Backend
     container_name: transcontrol_backend
@@ -31,7 +31,12 @@ services:
       - ./Backend/.env
     depends_on:
       db:
-        condition: service_healthy   # ← Espera a que la DB esté lista
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/uploads
 
 volumes:
   postgres_data:
+    driver: local
+  uploads_data:
+    driver: local

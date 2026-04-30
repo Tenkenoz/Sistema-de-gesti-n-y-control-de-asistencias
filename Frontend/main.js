@@ -14,13 +14,12 @@ const createWindow = () => {
             nodeIntegration: false,
             contextIsolation: true,
         },
-        icon: path.join(__dirname, 'Frontend', 'icon.png'), // Opcional
     });
 
-    // Cargar el archivo HTML principal (Login)s
-    mainWindow.loadFile(path.join('index.html'));
+    // Cargar el Login (index.html está DENTRO de Frontend/)
+    mainWindow.loadFile(path.join('Frontend', 'index.html'));
 
-    // Quitar la barra de menú por defecto (opcional)
+    // Quitar la barra de menú
     mainWindow.setMenuBarVisibility(false);
 
     // Abrir DevTools en desarrollo (quitar en producción)
@@ -43,7 +42,7 @@ app.whenReady().then(() => {
     });
 });
 
-// Salir cuando todas las ventanas estén cerradas (excepto en macOS)
+// Salir cuando todas las ventanas estén cerradas
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit();
