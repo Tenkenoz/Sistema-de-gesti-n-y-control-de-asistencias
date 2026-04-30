@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TransControl - Dashboard Coordinador</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        .animate-fade-in-down { animation: fadeInDown 0.3s ease-out forwards; }
+        .animate-fade-out-up { animation: fadeOutUp 0.3s ease-out forwards; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeOutUp {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-20px); }
+        }
+
+        .hidden-view { display: none !important; }
+        /* Evitar que los modales se vean antes de ser llamados */
+        .modal { display: none; }
+        .modal.active { display: flex; animation: fadeIn 0.2s ease-out; }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans h-screen flex overflow-hidden">
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 hidden">
+        <div id="toast" class="rounded-lg p-4 shadow-lg flex items-center bg-green-50 text-green-800 border-l-4 border-green-500">
+            <svg id="toast-icon-success" class="h-5 w-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            <svg id="toast-icon-error" class="hidden h-5 w-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <span id="toast-message" class="font-medium text-sm">Mensaje</span>
+        </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-blue-900 text-white flex flex-col shadow-xl z-10 flex-shrink-0">
+        <div class="p-6 flex items-center border-b border-blue-800">
+            <svg class="h-6 w-6 mr-3 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+            <h1 class="text-xl font-bold tracking-tight">TransControl</h1>
+        </div>
+        <div class="p-4 text-xs font-semibold text-blue-300 uppercase tracking-wider">
+            Panel Coordinador
+        </div>
+        <nav class="flex-1 px-3 space-y-1" id="nav-menu">
+            <button onclick="switchTab('transportistas')" id="tab-btn-transportistas" class="w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors bg-blue-800 text-white">
+                <svg class="h-5 w-5 mr-3 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                Gestión de Personal
+            </button>
+            <button onclick="switchTab('monitoreo')" id="tab-btn-monitoreo" class="w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-blue-100 hover:bg-blue-800/50">
+                <svg class="h-5 w-5 mr-3 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+                Monitoreo de Rutas
+            </button>
+        </nav>
+        <div class="p-4 border-t border-blue-800">
+            <button class="w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium text-blue-200 hover:text-white hover:bg-blue-800 transition-colors">
+                <svg class="h-5 w-5 mr-3 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                Cerrar Sesión
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 p-8 overflow-y-auto">
+        
+        <!-- VISTA: GESTIÓN DE TRANSPORTISTAS -->
+        <div id="view-transportistas" class="animate-fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Gestión de Transportistas</h2>
+                    <p class="text-sm text-gray-500">Administra el personal de transporte y sus unidades</p>
+                </div>
+                <button onclick="openModalTransp('create')" class="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    Nuevo Transportista
+                </button>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left" id="table-transportistas">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-4">Transportista</th>
+                                <th class="px-6 py-4">Cédula</th>
+                                <th class="px-6 py-4">Vehículo</th>
+                                <th class="px-6 py-4">Docs.</th>
+                                <th class="px-6 py-4 text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-transportistas">
+                            <!-- Filas generadas por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- VISTA: MONITOREO DE RUTAS -->
+        <div id="view-monitoreo" class="hidden-view animate-fade-in">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Monitoreo de Rutas</h2>
+                <p class="text-sm text-gray-500">Control de viajes activos y modificación de rutas ante incidencias</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="grid-viajes">
+                <!-- Tarjetas generadas por JS -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL: CREAR/EDITAR TRANSPORTISTA -->
+    <div id="modal-transp" class="modal fixed inset-0 bg-black/50 items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-slate-50">
+                <h3 id="modal-transp-title" class="text-lg font-bold text-gray-800">Registrar Nuevo Transportista</h3>
+                <button onclick="closeModal('modal-transp')" class="text-gray-400 hover:text-gray-600">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <form id="form-transp" class="p-6">
+                <input type="hidden" id="transp-id" name="id">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cédula *</label>
+                        <input id="transp-cedula" name="cedula" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nombres *</label>
+                        <input id="transp-nombres" name="nombres" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico *</label>
+                        <input id="transp-correo" name="correo" type="email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500">
+                    </div>
+                    <div id="div-password">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña Temporal *</label>
+                        <input id="transp-password" name="password" type="password" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Placa Vehículo</label>
+                        <input id="transp-placa" name="placa_vehiculo" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 uppercase" placeholder="ABC-1234">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Capacidad (Ton)</label>
+                        <input id="transp-capacidad" name="capacidad_ton" type="number" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+                    <button type="button" onclick="closeModal('modal-transp')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">Guardar Datos</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ELIMINAR (DESACTIVAR) TRANSPORTISTA -->
+    <div id="modal-delete" class="modal fixed inset-0 bg-black/50 items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <form id="form-delete" class="p-6">
+                <input type="hidden" id="delete-id">
+                <div class="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4 mx-auto">
+                    <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-center text-gray-900 mb-2">Desactivar Transportista</h3>
+                <p class="text-sm text-center text-gray-500 mb-6">¿Estás seguro de dar de baja a <strong id="delete-name"></strong>? Esta acción requerirá justificación para la auditoría.</p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Razón de baja *</label>
+                        <select name="razon" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 bg-white">
+                            <option value="">Seleccione un motivo...</option>
+                            <option value="TERMINACION_CONTRATO">Terminación de Contrato</option>
+                            <option value="INCUMPLIMIENTO_DOCUMENTAL">Incumplimiento Documental</option>
+                            <option value="FALTA_GRAVE">Falta Operativa Grave</option>
+                            <option value="OTRO">Otro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones adicionales</label>
+                        <textarea name="observaciones" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 resize-none"></textarea>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="closeModal('modal-delete')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">Confirmar Baja</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: MODIFICAR RUTA -->
+    <div id="modal-ruta" class="modal fixed inset-0 bg-black/50 items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
+             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-slate-50">
+                <h3 class="text-lg font-bold text-gray-800">Modificar Ruta Operativa</h3>
+                <button onclick="closeModal('modal-ruta')" class="text-gray-400 hover:text-gray-600">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <form id="form-ruta" class="p-6">
+                <input type="hidden" id="ruta-viaje-id">
+                <div class="bg-blue-50 border border-blue-100 p-3 rounded-lg mb-4 text-sm text-blue-800 flex items-start">
+                    <svg class="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <p>Estás alterando la ruta del viaje <strong id="ruta-codigo"></strong>. Esta acción se registrará en la auditoría del sistema.</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Enlace / GeoJSON de Nueva Ruta *</label>
+                        <input name="nueva_ruta_json" type="text" required placeholder="https://maps.google.com/..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Motivo del desvío *</label>
+                        <textarea name="motivo" required rows="3" placeholder="Ej: Cierre de vía por manifestación..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 resize-none"></textarea>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="closeModal('modal-ruta')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">Actualizar Ruta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        // --- DATA MOCK (Simula respuestas de API) ---
+        let transportistasData = [
+            { id: 1, cedula: '1712345678', nombres: 'Carlos Mendoza', correo: 'carlos@mail.com', placa_vehiculo: 'PBA-1234', capacidad_ton: 15, estado_documentacion: 'APROBADO' },
+            { id: 2, cedula: '0987654321', nombres: 'Luis Silva', correo: 'luis@mail.com', placa_vehiculo: 'GYA-9876', capacidad_ton: 20, estado_documentacion: 'PENDIENTE' }
+        ];
+
+        let viajesData = [
+            { id: 101, codigo: 'VJ-2026-001', estado: 'EN_EJECUCION', origen: 'Quito', destino: 'Guayaquil', transportista_nombres: 'Carlos Mendoza', placa_vehiculo: 'PBA-1234', horas_retraso: 0 },
+            { id: 102, codigo: 'VJ-2026-002', estado: 'TRANSPORTISTA_ASIGNADO', origen: 'Cuenca', destino: 'Manta', transportista_nombres: 'Luis Silva', placa_vehiculo: 'GYA-9876', horas_retraso: 2 }
+        ];
+
+        let modeTransp = 'create'; // 'create' o 'edit'
+
+        // --- INICIALIZACIÓN ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderTransportistas();
+            renderViajes();
+        });
+
+        // --- NAVEGACIÓN TABS ---
+        function switchTab(tabId) {
+            // Ocultar vistas
+            document.getElementById('view-transportistas').classList.add('hidden-view');
+            document.getElementById('view-monitoreo').classList.add('hidden-view');
+            
+            // Estilos botones
+            document.getElementById('tab-btn-transportistas').className = "w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-blue-100 hover:bg-blue-800/50";
+            document.getElementById('tab-btn-monitoreo').className = "w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-blue-100 hover:bg-blue-800/50";
+
+            // Mostrar activa
+            document.getElementById(`view-${tabId}`).classList.remove('hidden-view');
+            document.getElementById(`tab-btn-${tabId}`).className = "w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors bg-blue-800 text-white";
+        }
+
+        // --- SISTEMA TOAST ---
+        let toastTimeout;
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = message;
+
+            if (type === 'error') {
+                toast.className = 'rounded-lg p-4 shadow-lg flex items-center bg-red-50 text-red-800 border-l-4 border-red-500';
+                document.getElementById('toast-icon-success').classList.add('hidden');
+                document.getElementById('toast-icon-error').classList.remove('hidden');
+            } else {
+                toast.className = 'rounded-lg p-4 shadow-lg flex items-center bg-green-50 text-green-800 border-l-4 border-green-500';
+                document.getElementById('toast-icon-success').classList.remove('hidden');
+                document.getElementById('toast-icon-error').classList.add('hidden');
+            }
+
+            container.classList.remove('hidden', 'animate-fade-out-up');
+            container.classList.add('animate-fade-in-down');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                container.classList.remove('animate-fade-in-down');
+                container.classList.add('animate-fade-out-up');
+                setTimeout(() => container.classList.add('hidden'), 300);
+            }, 3000);
+        }
+
+        // --- RENDERIZADO DOM ---
+        function renderTransportistas() {
+            const tbody = document.getElementById('tbody-transportistas');
+            tbody.innerHTML = '';
+            
+            transportistasData.forEach(t => {
+                let badgeClass = '';
+                let badgeText = '';
+                if(t.estado_documentacion === 'APROBADO') { badgeClass = 'bg-green-100 text-green-800'; badgeText = 'Aprobado'; }
+                else if(t.estado_documentacion === 'PENDIENTE') { badgeClass = 'bg-yellow-100 text-yellow-800'; badgeText = 'Pendiente'; }
+                else { badgeClass = 'bg-red-100 text-red-800'; badgeText = 'Rechazado'; }
+
+                const tr = document.createElement('tr');
+                tr.className = "bg-white border-b hover:bg-gray-50";
+                tr.innerHTML = `
+                    <td class="px-6 py-4 font-medium text-gray-900">${t.nombres}</td>
+                    <td class="px-6 py-4 text-gray-500">${t.cedula}</td>
+                    <td class="px-6 py-4">
+                        <span class="font-medium">${t.placa_vehiculo || 'N/A'}</span>
+                        <span class="text-gray-500 block text-xs">${t.capacidad_ton || 0} ton</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-xs px-2.5 py-0.5 rounded-full font-medium ${badgeClass}">${badgeText}</span>
+                    </td>
+                    <td class="px-6 py-4 text-right space-x-2">
+                        <button onclick="openModalTransp('edit', ${t.id})" class="text-blue-600 hover:text-blue-900 p-1"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+                        <button onclick="openModalDelete(${t.id})" class="text-red-600 hover:text-red-900 p-1"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderViajes() {
+            const grid = document.getElementById('grid-viajes');
+            grid.innerHTML = '';
+
+            viajesData.forEach(v => {
+                const isEjecucion = v.estado === 'EN_EJECUCION';
+                const div = document.createElement('div');
+                div.className = "bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow";
+                div.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">${v.codigo}</span>
+                            <h3 class="text-lg font-bold text-gray-800 mt-1">${v.estado.replace('_', ' ')}</h3>
+                        </div>
+                        <div class="p-2 rounded-full ${isEjecucion ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'}">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                        </div>
+                    </div>
+                    <div class="space-y-3 mb-5">
+                        <div class="flex items-start">
+                            <svg class="h-4 w-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            <div class="text-sm text-gray-600">
+                                <span class="block font-medium text-gray-800">Ruta:</span>
+                                ${v.origen} <span class="mx-1 text-gray-400">→</span> ${v.destino}
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <svg class="h-4 w-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"></path></svg>
+                            <div class="text-sm text-gray-600">
+                                <span class="block font-medium text-gray-800">Unidad:</span>
+                                ${v.transportista_nombres} (${v.placa_vehiculo})
+                            </div>
+                        </div>
+                        ${v.horas_retraso > 0 ? `
+                        <div class="flex items-start text-amber-600 bg-amber-50 p-2 rounded-lg">
+                            <svg class="h-4 w-4 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            <span class="text-sm font-medium">Retraso: ${v.horas_retraso} horas</span>
+                        </div>` : ''}
+                    </div>
+                    <div class="pt-4 border-t border-gray-100 flex justify-end">
+                        <button onclick="openModalRuta(${v.id})" ${!isEjecucion ? 'disabled' : ''} class="text-sm font-medium px-4 py-2 rounded-lg transition-colors ${isEjecucion ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'bg-gray-50 text-gray-400 cursor-not-allowed'}">
+                            Modificar Ruta
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        // --- GESTIÓN DE MODALES ---
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function openModalTransp(mode, id = null) {
+            modeTransp = mode;
+            const form = document.getElementById('form-transp');
+            form.reset();
+            document.getElementById('transp-id').value = id || '';
+
+            if (mode === 'create') {
+                document.getElementById('modal-transp-title').textContent = "Registrar Nuevo Transportista";
+                document.getElementById('div-password').style.display = 'block';
+                document.getElementById('transp-password').required = true;
+                document.getElementById('transp-cedula').disabled = false;
+            } else {
+                document.getElementById('modal-transp-title').textContent = "Editar Transportista";
+                document.getElementById('div-password').style.display = 'none';
+                document.getElementById('transp-password').required = false;
+                
+                // Llenar datos (Simulado)
+                const t = transportistasData.find(x => x.id === id);
+                if(t) {
+                    document.getElementById('transp-cedula').value = t.cedula;
+                    document.getElementById('transp-cedula').disabled = true; // No se edita cédula
+                    document.getElementById('transp-nombres').value = t.nombres;
+                    document.getElementById('transp-correo').value = t.correo;
+                    document.getElementById('transp-placa').value = t.placa_vehiculo;
+                    document.getElementById('transp-capacidad').value = t.capacidad_ton;
+                }
+            }
+            document.getElementById('modal-transp').classList.add('active');
+        }
+
+        function openModalDelete(id) {
+            const t = transportistasData.find(x => x.id === id);
+            if(!t) return;
+            document.getElementById('form-delete').reset();
+            document.getElementById('delete-id').value = id;
+            document.getElementById('delete-name').textContent = t.nombres;
+            document.getElementById('modal-delete').classList.add('active');
+        }
+
+        function openModalRuta(id) {
+            const v = viajesData.find(x => x.id === id);
+            if(!v) return;
+            document.getElementById('form-ruta').reset();
+            document.getElementById('ruta-viaje-id').value = id;
+            document.getElementById('ruta-codigo').textContent = v.codigo;
+            document.getElementById('modal-ruta').classList.add('active');
+        }
+
+        // --- MANEJADORES DE FORMULARIOS (INTEGRACIÓN API) ---
+
+        // 1. Guardar Transportista
+        document.getElementById('form-transp').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            if (modeTransp === 'create') {
+                // API: POST /api/transportistas/
+                console.log('--- API Call: Crear Transportista (FormData) ---');
+                for (let pair of formData.entries()) {
+                    console.log(pair[0]+ ', ' + pair[1]); 
+                }
+                showToast('Transportista creado correctamente');
+            } else {
+                // API: PUT /api/transportistas/{id}
+                const id = formData.get('id');
+                const payload = Object.fromEntries(formData.entries());
+                delete payload.id;
+                delete payload.cedula; // no se envía si está disabled
+                
+                console.log(`--- API Call: Editar Transportista ID: ${id} (JSON) ---`);
+                console.log(JSON.stringify(payload, null, 2));
+                showToast('Transportista actualizado correctamente');
+            }
+            closeModal('modal-transp');
+        });
+
+        // 2. Eliminar Transportista
+        document.getElementById('form-delete').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('delete-id').value;
+            const formData = new FormData(this);
+            const payload = Object.fromEntries(formData.entries());
+            
+            // API: DELETE /api/transportistas/{id}
+            console.log(`--- API Call: Eliminar Transportista ID: ${id} (JSON) ---`);
+            console.log(JSON.stringify(payload, null, 2));
+            
+            showToast('Transportista dado de baja');
+            closeModal('modal-delete');
+        });
+
+        // 3. Modificar Ruta
+        document.getElementById('form-ruta').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('ruta-viaje-id').value;
+            const formData = new FormData(this);
+            const payload = Object.fromEntries(formData.entries());
+            
+            // API: PATCH /api/monitoreo/viajes/{id}/ruta
+            console.log(`--- API Call: Modificar Ruta Viaje ID: ${id} (JSON) ---`);
+            console.log(JSON.stringify(payload, null, 2));
+            
+            showToast('Ruta del viaje actualizada');
+            closeModal('modal-ruta');
+        });
+
+    </script>
+</body>
+</html>
