@@ -1,4 +1,3 @@
-
 #Aqui falta el servicio del frontend, pero lo agregare despues, por ahora solo el backend y la base de datos
 services:
   # Servicio de Base de Datos
@@ -8,12 +7,18 @@ services:
     restart: always
     environment:
       POSTGRES_USER: transuser
-      POSTGRES_PASSWORD: tu_password
+      POSTGRES_PASSWORD: nueva_password   # ← CAMBIADO para coincidir con .env
       POSTGRES_DB: transcontrol
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U transuser -d transcontrol"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   # Servicio del Backend (FastAPI)
   backend:
@@ -25,7 +30,8 @@ services:
     env_file:
       - ./Backend/.env
     depends_on:
-      - db
+      db:
+        condition: service_healthy   # ← Espera a que la DB esté lista
 
 volumes:
   postgres_data:

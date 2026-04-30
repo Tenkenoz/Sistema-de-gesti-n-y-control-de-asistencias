@@ -1,14 +1,15 @@
 """
 RF-4.1  Crear Transportista
 RF-4.2  Editar Transportista
-RF-4.3  Eliminar Transportista
-RF-4.4  Importar Documentación
-RF-4.5  Consultar Documentos
+RF-4.3  Eliminar Transportista (Desactivar)
+RF-4.3b Activar Transportista
+RF-4.3c Eliminar Permanentemente
+RF-4.4  Importar Documentación (Individual)
+RF-4.5  Consultar y Revisar Documentos
 """
 import os
-import shutil
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import (
     APIRouter, Depends, File, Form,
@@ -19,11 +20,10 @@ from sqlalchemy.orm import Session
 from core.config import settings
 from core.security import get_current_user, require_roles
 from database import get_db
-from models.models import Documento, EstadoDocEnum, Transportista, Usuario
+from models.models import Documento, EstadoDocEnum, Transportista, Usuario, Viaje, EstadoViajeEnum
 from schemas.transportista_schemas import (
     EliminarTransportistaRequest,
     RevisionDocumentoRequest,
-    TransportistaOut,
     TransportistaUpdate,
 )
 from utils.auditoria import registrar_auditoria
@@ -33,10 +33,15 @@ router = APIRouter(prefix="/api/transportistas", tags=["Transportistas"])
 
 # ── helpers ────────────────────────────────────────────────────────────────────
 
+def _extraer_estado(estado) -> str:
+    """Extrae el valor string de un Enum de SQLAlchemy"""
+    return estado.value if hasattr(estado, 'value') else str(estado)
+
+
 def _estado_documentacion(docs: list) -> str:
     if not docs:
         return "SIN_DOCS"
-    estados = {d.estado for d in docs}
+    estados = {_extraer_estado(d.estado) for d in docs}
     if "RECHAZADO" in estados:
         return "RECHAZADO"
     if "PENDIENTE" in estados:
@@ -57,7 +62,19 @@ def _build_out(t: Transportista) -> dict:
         "tipo_vehiculo": t.tipo_vehiculo,
         "capacidad_ton": float(t.capacidad_ton) if t.capacidad_ton else None,
         "activo": t.usuario.activo,
-        "documentos": t.documentos,
+        "documentos": [
+            {
+                "id": d.id,
+                "tipo": _extraer_estado(d.tipo),
+                "nombre_archivo": d.nombre_archivo,
+                "estado": _extraer_estado(d.estado),
+                "fecha_vencimiento": d.fecha_vencimiento,
+                "observacion": d.observacion,
+                "subido_en": d.subido_en,
+                "revisado_en": d.revisado_en,
+            }
+            for d in t.documentos
+        ],
         "estado_documentacion": _estado_documentacion(t.documentos),
     }
 
@@ -76,7 +93,7 @@ def crear_transportista(
     direccion: Optional[str] = Form(None),
     telefono: Optional[str] = Form(None),
     db: Session = Depends(get_db),
-    current_user=Depends(require_roles("COORDINADOR", "SECRETARIA")),
+    current_user=Depends(require_roles("COORDINADOR")),
     request: Request = None,
 ):
     from core.security import hash_password
@@ -146,7 +163,7 @@ def editar_transportista(
     transportista_id: int,
     body: TransportistaUpdate,
     db: Session = Depends(get_db),
-    current_user=Depends(require_roles("COORDINADOR", "SECRETARIA")),
+    current_user=Depends(require_roles("COORDINADOR")),
     request: Request = None,
 ):
     t = db.query(Transportista).filter(Transportista.id == transportista_id).first()
@@ -167,23 +184,21 @@ def editar_transportista(
     return _build_out(t)
 
 
-# ── RF-4.3  Eliminar (desactivar) Transportista ───────────────────────────────
+# ── RF-4.3  Desactivar Transportista (baja lógica) ────────────────────────────
 
 @router.delete("/{transportista_id}")
-def eliminar_transportista(
+def desactivar_transportista(
     transportista_id: int,
     body: EliminarTransportistaRequest,
     db: Session = Depends(get_db),
     current_user=Depends(require_roles("COORDINADOR")),
     request: Request = None,
 ):
-    from models.models import EstadoViajeEnum, Viaje
-
     t = db.query(Transportista).filter(Transportista.id == transportista_id).first()
     if not t:
         raise HTTPException(404, "Transportista no encontrado")
 
-    # verificar sin viajes en ejecución
+    # Verificar sin viajes en ejecución
     en_ejecucion = (
         db.query(Viaje)
         .filter(
@@ -193,20 +208,90 @@ def eliminar_transportista(
         .first()
     )
     if en_ejecucion:
-        raise HTTPException(409, "El transportista tiene viajes en ejecución. No se puede eliminar.")
+        raise HTTPException(409, "El transportista tiene viajes en ejecución. No se puede desactivar.")
 
     t.usuario.activo = False
     db.commit()
 
     registrar_auditoria(
-        db, "ELIMINAR_TRANSPORTISTA", usuario_id=current_user.id,
+        db, "DESACTIVAR_TRANSPORTISTA", usuario_id=current_user.id,
         descripcion=f"Transportista id={transportista_id} desactivado. Razón: {body.razon}. {body.observaciones or ''}",
         ip_address=request.client.host if request else None,
     )
     return {"mensaje": "Transportista desactivado correctamente"}
 
 
-# ── RF-4.4  Importar Documentación ───────────────────────────────────────────
+# ── RF-4.3b  Activar Transportista ────────────────────────────────────────────
+
+@router.patch("/{transportista_id}/activar")
+def activar_transportista(
+    transportista_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_roles("COORDINADOR")),
+    request: Request = None,
+):
+    t = db.query(Transportista).filter(Transportista.id == transportista_id).first()
+    if not t:
+        raise HTTPException(404, "Transportista no encontrado")
+
+    t.usuario.activo = True
+    db.commit()
+
+    registrar_auditoria(
+        db, "ACTIVAR_TRANSPORTISTA", usuario_id=current_user.id,
+        descripcion=f"Transportista id={transportista_id} activado",
+        ip_address=request.client.host if request else None,
+    )
+    return {"mensaje": "Transportista activado correctamente"}
+
+
+# ── RF-4.3c  Eliminar Permanentemente ─────────────────────────────────────────
+
+@router.delete("/{transportista_id}/permanente")
+def eliminar_permanentemente(
+    transportista_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_roles("COORDINADOR")),
+    request: Request = None,
+):
+    t = db.query(Transportista).filter(Transportista.id == transportista_id).first()
+    if not t:
+        raise HTTPException(404, "Transportista no encontrado")
+
+    # Verificar sin viajes en ejecución
+    en_ejecucion = (
+        db.query(Viaje)
+        .filter(
+            Viaje.transportista_id == transportista_id,
+            Viaje.estado.in_([EstadoViajeEnum.EN_EJECUCION, EstadoViajeEnum.TRANSPORTISTA_ASIGNADO]),
+        )
+        .first()
+    )
+    if en_ejecucion:
+        raise HTTPException(409, "El transportista tiene viajes activos. No se puede eliminar permanentemente.")
+
+    usuario = t.usuario
+
+    # Eliminar documentos asociados
+    db.query(Documento).filter(Documento.transportista_id == transportista_id).delete()
+
+    # Eliminar transportista
+    db.delete(t)
+
+    # Eliminar usuario
+    db.delete(usuario)
+
+    db.commit()
+
+    registrar_auditoria(
+        db, "ELIMINAR_PERMANENTE", usuario_id=current_user.id,
+        descripcion=f"Transportista id={transportista_id} eliminado permanentemente",
+        ip_address=request.client.host if request else None,
+    )
+    return {"mensaje": "Transportista eliminado permanentemente"}
+
+
+# ── RF-4.4  Importar Documentación (Individual) ───────────────────────────────
 
 @router.post("/{transportista_id}/documentos", status_code=201)
 async def importar_documento(
@@ -222,26 +307,27 @@ async def importar_documento(
     if not t:
         raise HTTPException(404, "Transportista no encontrado")
 
-    # validar que solo el propio transportista o admin suban
-    if current_user.rol == "TRANSPORTISTA" and t.usuario_id != current_user.id:
+    # Validar que solo el propio transportista o admin suban
+    rol_usuario = _extraer_estado(current_user.rol)
+    if rol_usuario == "TRANSPORTISTA" and t.usuario_id != current_user.id:
         raise HTTPException(403, "No tiene permiso para subir documentos de otro transportista")
 
-    # validar tipo
+    # Validar tipo
     tipos_validos = ["CEDULA", "LICENCIA_E", "MATRICULA", "REVISION_TECNICA", "SOAT", "PERMISO_PESOS"]
     if tipo not in tipos_validos:
-        raise HTTPException(400, f"Tipo inválido. Válidos: {tipos_validos}")
+        raise HTTPException(400, f"Tipo inválido. Válidos: {', '.join(tipos_validos)}")
 
-    # validar tamaño
+    # Validar tamaño
     content = await archivo.read()
     max_bytes = settings.MAX_FILE_SIZE_MB * 1024 * 1024
     if len(content) > max_bytes:
         raise HTTPException(400, f"El archivo excede el límite de {settings.MAX_FILE_SIZE_MB}MB")
 
-    # validar formato PDF
-    if not archivo.content_type == "application/pdf":
+    # Validar formato PDF
+    if archivo.content_type != "application/pdf":
         raise HTTPException(400, "Solo se aceptan archivos en formato PDF")
 
-    # guardar archivo
+    # Guardar archivo
     folder = os.path.join(settings.UPLOAD_DIR, str(transportista_id))
     os.makedirs(folder, exist_ok=True)
     filename = f"{tipo}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{archivo.filename}"
@@ -250,7 +336,7 @@ async def importar_documento(
     with open(filepath, "wb") as f:
         f.write(content)
 
-    # vencimiento
+    # Fecha de vencimiento
     venc = None
     if fecha_vencimiento:
         try:
@@ -258,15 +344,37 @@ async def importar_documento(
         except ValueError:
             pass
 
-    doc = Documento(
-        transportista_id=transportista_id,
-        tipo=tipo,
-        ruta_archivo=filepath,
-        nombre_archivo=filename,
-        estado=EstadoDocEnum.PENDIENTE,
-        fecha_vencimiento=venc,
+    # Si ya existe un documento del mismo tipo, actualizarlo
+    doc_existente = (
+        db.query(Documento)
+        .filter(
+            Documento.transportista_id == transportista_id,
+            Documento.tipo == tipo,
+        )
+        .first()
     )
-    db.add(doc)
+
+    if doc_existente:
+        doc_existente.nombre_archivo = filename
+        doc_existente.ruta_archivo = filepath
+        doc_existente.estado = EstadoDocEnum.PENDIENTE
+        doc_existente.fecha_vencimiento = venc
+        doc_existente.subido_en = datetime.utcnow()
+        doc_existente.revisado_en = None
+        doc_existente.observacion = None
+        doc_existente.revisado_por_id = None
+        doc = doc_existente
+    else:
+        doc = Documento(
+            transportista_id=transportista_id,
+            tipo=tipo,
+            ruta_archivo=filepath,
+            nombre_archivo=filename,
+            estado=EstadoDocEnum.PENDIENTE,
+            fecha_vencimiento=venc,
+        )
+        db.add(doc)
+
     db.commit()
     db.refresh(doc)
 
@@ -278,7 +386,7 @@ async def importar_documento(
     return {"mensaje": "Documento subido correctamente", "documento_id": doc.id}
 
 
-# ── RF-4.5  Consultar y Revisar Documentos ────────────────────────────────────
+# ── RF-4.5  Consultar Documentos ──────────────────────────────────────────────
 
 @router.get("/{transportista_id}/documentos")
 def consultar_documentos(
@@ -291,9 +399,23 @@ def consultar_documentos(
         raise HTTPException(404, "Transportista no encontrado")
     return {
         "transportista": _build_out(t),
-        "documentos": t.documentos,
+        "documentos": [
+            {
+                "id": d.id,
+                "tipo": _extraer_estado(d.tipo),
+                "nombre_archivo": d.nombre_archivo,
+                "estado": _extraer_estado(d.estado),
+                "fecha_vencimiento": d.fecha_vencimiento,
+                "observacion": d.observacion,
+                "subido_en": d.subido_en,
+                "revisado_en": d.revisado_en,
+            }
+            for d in t.documentos
+        ],
     }
 
+
+# ── Revisar Documento (Secretaria) ────────────────────────────────────────────
 
 @router.put("/{transportista_id}/documentos/{doc_id}/revisar")
 def revisar_documento(
@@ -314,6 +436,9 @@ def revisar_documento(
 
     if body.estado not in ["APROBADO", "RECHAZADO"]:
         raise HTTPException(400, "Estado debe ser APROBADO o RECHAZADO")
+
+    if body.estado == "RECHAZADO" and not body.observacion:
+        raise HTTPException(400, "Debe proporcionar una observación cuando rechaza un documento")
 
     doc.estado = body.estado
     doc.observacion = body.observacion

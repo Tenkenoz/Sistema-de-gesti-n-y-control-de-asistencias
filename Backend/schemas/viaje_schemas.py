@@ -42,7 +42,12 @@ class PlanificarRutaRequest(BaseModel):
     origen: str
     destino: str
     tramos_intermedios: Optional[List[str]] = []
-    ruta_json: Optional[str] = None    # GeoJSON calculado por el frontend
+    ruta_json: Optional[str] = None
+
+
+# ⚠️ NUEVO SCHEMA (FALTABA)
+class AsignarTransportistaRequest(BaseModel):
+    transportista_id: int
 
 
 class ViajeOut(BaseModel):

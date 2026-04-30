@@ -52,8 +52,8 @@ def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ):
-    # CORRECCIÓN 1: Ruta de importación exacta
-    from models.models import Usuario 
+    # Importación local para evitar dependencias circulares
+    from models.models import Usuario
 
     payload = decode_token(token)
     user_id_str: str = payload.get("sub")
@@ -62,7 +62,6 @@ def get_current_user(
         raise HTTPException(status_code=401, detail="Token inválido: falta identificador")
 
     try:
-        # CORRECCIÓN 2: Asegurar conversión a entero para la búsqueda en Postgres
         user_id = int(user_id_str)
         user = db.query(Usuario).filter(Usuario.id == user_id).first()
     except ValueError:
@@ -76,10 +75,19 @@ def get_current_user(
 
     return user
 
+
 def require_roles(*roles: str):
-    """Decorador de dependencia que exige que el usuario tenga uno de los roles dados."""
+    """
+    Decorador de dependencia que exige que el usuario tenga uno de los roles dados.
+    
+    ⚠️ CORRECCIÓN CRÍTICA: SQLAlchemy retorna Enum objects, no strings.
+    Se debe comparar con .value para que funcione correctamente.
+    """
     def _dependency(current_user=Depends(get_current_user)):
-        if current_user.rol not in roles:
+        # Extraer el valor del Enum de SQLAlchemy para comparar correctamente
+        rol_usuario = current_user.rol.value if hasattr(current_user.rol, 'value') else current_user.rol
+        
+        if rol_usuario not in roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Acceso denegado. Roles permitidos: {', '.join(roles)}",
