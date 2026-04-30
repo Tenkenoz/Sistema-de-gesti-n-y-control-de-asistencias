@@ -1,1 +1,334 @@
-<h1> Aqui va ir un login</h1>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TransControl - Autenticación</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Animaciones personalizadas */
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        .animate-fade-in-down { animation: fadeInDown 0.3s ease-out forwards; }
+        .animate-fade-out-up { animation: fadeOutUp 0.3s ease-out forwards; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeOutUp {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-20px); }
+        }
+
+        .hidden-view { display: none !important; }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden font-sans">
+
+    <!-- Elementos decorativos de fondo -->
+    <div class="absolute top-0 left-0 w-full h-64 bg-blue-900 transform -skew-y-6 origin-top-left -z-10 shadow-lg"></div>
+
+    <!-- Contenedor Toast para Notificaciones (Reemplazo de alert) -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 hidden">
+        <div id="toast" class="rounded-lg p-4 shadow-lg flex items-center bg-green-50 text-green-800 border-l-4 border-green-500">
+            <!-- Icono Success -->
+            <svg id="toast-icon-success" class="h-5 w-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <!-- Icono Error -->
+            <svg id="toast-icon-error" class="hidden h-5 w-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span id="toast-message" class="font-medium text-sm">Mensaje</span>
+        </div>
+    </div>
+
+    <!-- Cabecera Logo -->
+    <div class="sm:mx-auto sm:w-full sm:max-w-md z-10">
+        <div class="flex justify-center items-center text-white mb-6">
+            <div class="bg-white p-3 rounded-xl shadow-md mr-3">
+                <svg class="h-8 w-8 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                </svg>
+            </div>
+            <h1 class="text-4xl font-extrabold tracking-tight text-white drop-shadow-md">TransControl</h1>
+        </div>
+    </div>
+
+    <!-- Contenedor Principal de Vistas -->
+    <div id="main-container" class="sm:mx-auto w-full sm:max-w-md transition-all duration-300 z-10">
+        <div class="bg-white py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-gray-100 relative overflow-hidden">
+            
+            <!-- ========================================== -->
+            <!-- VISTA 1: INICIAR SESIÓN (RF-1) -->
+            <!-- ========================================== -->
+            <div id="view-login" class="animate-fade-in">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-gray-800">Bienvenido a TransControl</h2>
+                    <p class="text-gray-500 text-sm mt-2">Ingresa tus credenciales para continuar</p>
+                </div>
+                <form id="form-login" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cédula o Correo</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            </div>
+                            <input type="text" name="username" required class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="ej. 1712345678 o admin@correo.com">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                            </div>
+                            <input type="password" name="password" required class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="••••••••">
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-end">
+                        <button type="button" onclick="switchView('recover')" class="text-sm text-blue-600 hover:text-blue-500 font-medium">¿Olvidaste tu contraseña?</button>
+                    </div>
+                    <button type="submit" class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                        Iniciar Sesión
+                    </button>
+                </form>
+                <div class="mt-6 text-center">
+                    <p class="text-sm text-gray-600">¿No tienes cuenta? <button onclick="switchView('register')" class="font-medium text-blue-600 hover:text-blue-500">Regístrate aquí</button></p>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- VISTA 2: REGISTRO (RF-2) -->
+            <!-- ========================================== -->
+            <div id="view-register" class="hidden-view animate-fade-in">
+                <button onclick="switchView('login')" class="flex items-center text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors">
+                    <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    Volver al login
+                </button>
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Crear Cuenta</h2>
+                    <p class="text-gray-500 text-sm mt-1">Completa tus datos para registrarte</p>
+                </div>
+                <form id="form-register" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Cédula *</label>
+                            <input type="text" name="cedula" required maxlength="13" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nombres Completos *</label>
+                            <input type="text" name="nombres" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico *</label>
+                            <input type="email" name="correo" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña *</label>
+                            <input type="password" name="password" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Rol *</label>
+                            <select name="rol" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white">
+                                <option value="TRANSPORTISTA">Transportista</option>
+                                <option value="SECRETARIA">Secretaria</option>
+                                <option value="COORDINADOR">Coordinador</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                            <input type="text" name="telefono" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+                        <input type="text" name="direccion" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <button type="submit" class="w-full py-2.5 mt-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                        Registrarse
+                    </button>
+                </form>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- VISTA 3: RECUPERAR CONTRASEÑA (RF-3) -->
+            <!-- ========================================== -->
+            <div id="view-recover" class="hidden-view animate-fade-in">
+                <button onclick="switchView('login')" class="flex items-center text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors">
+                    <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    Volver al login
+                </button>
+                <div class="text-center mb-8">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+                        <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">Recuperar Contraseña</h2>
+                    <p class="text-gray-500 text-sm mt-2 px-4">Ingresa tu correo electrónico y te enviaremos las instrucciones para restablecerla.</p>
+                </div>
+                <form id="form-recover" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+                        <input type="email" name="correo" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="tu@correo.com">
+                    </div>
+                    <button type="submit" class="w-full py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                        Enviar Instrucciones
+                    </button>
+                </form>
+            </div>
+
+        </div>
+        
+        <div class="mt-8 text-center text-sm text-gray-500">
+            &copy; 2026 TransControl App. Todos los derechos reservados.
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- LÓGICA JAVASCRIPT -->
+    <!-- ========================================== -->
+    <script>
+        // --- GESTIÓN DE VISTAS ---
+        const views = {
+            login: document.getElementById('view-login'),
+            register: document.getElementById('view-register'),
+            recover: document.getElementById('view-recover')
+        };
+        const mainContainer = document.getElementById('main-container');
+
+        function switchView(viewName) {
+            // Ocultar todas
+            Object.values(views).forEach(v => {
+                v.classList.add('hidden-view');
+                v.classList.remove('animate-fade-in');
+            });
+
+            // Ajustar ancho del contenedor si es registro (requiere más espacio)
+            if (viewName === 'register') {
+                mainContainer.classList.remove('sm:max-w-md');
+                mainContainer.classList.add('sm:max-w-xl');
+            } else {
+                mainContainer.classList.remove('sm:max-w-xl');
+                mainContainer.classList.add('sm:max-w-md');
+            }
+
+            // Mostrar la seleccionada
+            setTimeout(() => {
+                views[viewName].classList.remove('hidden-view');
+                views[viewName].classList.add('animate-fade-in');
+            }, 50); // Pequeño delay para reiniciar la animación
+        }
+
+        // --- SISTEMA DE NOTIFICACIONES (TOAST) ---
+        let toastTimeout;
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toast-message');
+            const iconSuccess = document.getElementById('toast-icon-success');
+            const iconError = document.getElementById('toast-icon-error');
+
+            clearTimeout(toastTimeout);
+
+            // Configurar mensaje
+            msgEl.textContent = message;
+
+            // Configurar estilos según el tipo
+            if (type === 'error') {
+                toast.className = 'rounded-lg p-4 shadow-lg flex items-center bg-red-50 text-red-800 border-l-4 border-red-500';
+                iconSuccess.classList.add('hidden');
+                iconError.classList.remove('hidden');
+            } else {
+                toast.className = 'rounded-lg p-4 shadow-lg flex items-center bg-green-50 text-green-800 border-l-4 border-green-500';
+                iconSuccess.classList.remove('hidden');
+                iconError.classList.add('hidden');
+            }
+
+            // Mostrar animación
+            container.classList.remove('hidden', 'animate-fade-out-up');
+            container.classList.add('animate-fade-in-down');
+
+            // Ocultar después de 3 segundos
+            toastTimeout = setTimeout(() => {
+                container.classList.remove('animate-fade-in-down');
+                container.classList.add('animate-fade-out-up');
+                setTimeout(() => container.classList.add('hidden'), 300);
+            }, 3000);
+        }
+
+        // --- MANEJADORES DE FORMULARIOS (INTEGRACIÓN API) ---
+
+        // 1. INICIAR SESIÓN (POST /api/auth/login)
+        document.getElementById('form-login').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Extraer datos del formulario a JSON
+            const formData = new FormData(this);
+            const payload = Object.fromEntries(formData.entries());
+            
+            console.log('--- Payload Login ---');
+            console.log(JSON.stringify(payload, null, 2));
+            
+            /* AQUÍ IRÍA TU PETICIÓN FETCH:
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(...) */
+
+            showToast('Simulación: Iniciando sesión...', 'success');
+        });
+
+        // 2. REGISTRO (POST /api/auth/registro)
+        document.getElementById('form-register').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Extraer datos del formulario a JSON
+            const formData = new FormData(this);
+            const payload = Object.fromEntries(formData.entries());
+            
+            console.log('--- Payload Registro ---');
+            console.log(JSON.stringify(payload, null, 2));
+            
+            /* AQUÍ IRÍA TU PETICIÓN FETCH:
+            fetch('/api/auth/registro', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(...) */
+
+            showToast('Cuenta creada. Redirigiendo al login...', 'success');
+            setTimeout(() => switchView('login'), 1500);
+            this.reset();
+        });
+
+        // 3. RECUPERAR CONTRASEÑA (POST /api/auth/recuperar-password)
+        document.getElementById('form-recover').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Extraer datos del formulario a JSON
+            const formData = new FormData(this);
+            const payload = Object.fromEntries(formData.entries());
+            
+            console.log('--- Payload Recuperar Password ---');
+            console.log(JSON.stringify(payload, null, 2));
+
+            /* AQUÍ IRÍA TU PETICIÓN FETCH:
+            fetch('/api/auth/recuperar-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(...) */
+
+            showToast('Si el correo existe, recibirás instrucciones.', 'success');
+            setTimeout(() => switchView('login'), 2000);
+            this.reset();
+        });
+    </script>
+</body>
+</html>
