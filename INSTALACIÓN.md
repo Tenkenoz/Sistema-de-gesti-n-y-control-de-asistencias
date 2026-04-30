@@ -71,6 +71,8 @@ git --version
 
 ## ▶️ Ejecución
 
+ojooo poner el env dentro del backend, antes de continuar
+
 ### Opción A - Docker
 
 Terminal 1:
