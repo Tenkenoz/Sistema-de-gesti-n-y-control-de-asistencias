@@ -8,7 +8,6 @@ Sistema integral para gestión de transportistas, validación documental, contro
 
 | Rol           | Correo                                                                | Contraseña |
 | ------------- | --------------------------------------------------------------------- | ---------- |
-| GERENTE       | [admin@transcontrol.ec](mailto:admin@transcontrol.ec)                 | Admin1234! |
 | SECRETARIA    | [secretaria@transcontrol.ec](mailto:secretaria@transcontrol.ec)       | Admin1234! |
 | COORDINADOR   | [coordinador@transcontrol.ec](mailto:coordinador@transcontrol.ec)     | Admin1234! |
 | TRANSPORTISTA | [transportista@transcontrol.ec](mailto:transportista@transcontrol.ec) | Admin1234! |
@@ -78,6 +77,7 @@ Terminal 1:
 docker-compose up -d --build
 
 Terminal 2:
+npm i
 npm start
 
 ### Opción B - Manual
@@ -87,6 +87,7 @@ cd Backend
 uvicorn main:app --reload --port 8000
 
 Terminal 2:
+npm i
 npm start
 
 ---
