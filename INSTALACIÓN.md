@@ -55,35 +55,47 @@ git --version
 ## ⚙️ Instalación
 
 1. Clonar repositorio
+
    git clone https://github.com/Tenkenoz/Sistema-de-gesti-n-y-control-de-asistencias.git
+
    cd Sistema-de-gesti-n-y-control-de-asistencias
 
 2. Configurar variables de entorno (Backend/.env)
 
 3. Instalar dependencias
+
    cd Backend
+
    pip install -r requirements.txt
+
    cd ..
 
 ## ▶️ Primera ejecución
 
    npm install
+
    docker-compose up -d --build
+
    npm start
 
 ## ▶️ Ejecutar después
 
    docker-compose up -d
+
    npm start
 
 ### Opción B - Manual
 
 Terminal 1:
+
 cd Backend
+
 uvicorn main:app --reload --port 8000
 
 Terminal 2:
+
 npm i
+
 npm start
 
 ---
@@ -91,5 +103,8 @@ npm start
 ## 🌐 Accesos
 
 Frontend: Se abre con Electron
+
 Backend: http://localhost:8000
+
 Swagger: http://localhost:8000/docs
+
