@@ -52,35 +52,29 @@ docker --version
 git --version
 
 ---
-
 ## ⚙️ Instalación
 
 1. Clonar repositorio
    git clone https://github.com/Tenkenoz/Sistema-de-gesti-n-y-control-de-asistencias.git
    cd Sistema-de-gesti-n-y-control-de-asistencias
 
-2. Instalar dependencias frontend
-   npm install
+2. Configurar variables de entorno (Backend/.env)
 
-3. Instalar backend
+3. Instalar dependencias
    cd Backend
    pip install -r requirements.txt
    cd ..
 
----
+## ▶️ Primera ejecución
 
-## ▶️ Ejecución
+   npm install
+   docker-compose up -d --build
+   npm start
 
-ojooo poner el env dentro del backend, antes de continuar
+## ▶️ Ejecutar después
 
-### Opción A - Docker
-
-Terminal 1:
-docker-compose up -d --build
-
-Terminal 2:
-npm i
-npm start
+   docker-compose up -d
+   npm start
 
 ### Opción B - Manual
 
