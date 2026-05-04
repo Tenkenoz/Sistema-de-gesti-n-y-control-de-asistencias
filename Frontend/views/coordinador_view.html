@@ -17,6 +17,20 @@
         .modal.active { display: flex; animation: fadeIn 0.2s ease-out; }
         .spinner { border: 2px solid #fff; border-top: 2px solid transparent; border-radius: 50%; width: 16px; height: 16px; animation: spin 0.6s linear infinite; display: inline-block; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        .input-error {
+            border-color: #ef4444 !important;
+            ring-color: #ef4444 !important;
+        }
+        .error-message {
+            color: #dc2626;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+        .error-message.visible {
+            display: block;
+        }
     </style>
 </head>
 <body class="bg-slate-50 font-sans h-screen flex overflow-hidden">
@@ -130,12 +144,24 @@
                 <h3 id="modal-transp-title" class="text-lg font-bold text-gray-800">Registrar Nuevo Transportista</h3>
                 <button onclick="closeModal('modal-transp')" class="text-gray-400 hover:text-gray-600"><svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
             </div>
-            <form id="form-transp" class="p-6">
+            <form id="form-transp" class="p-6" novalidate>
                 <input type="hidden" id="transp-id">
                 <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Cédula *</label><input id="transp-cedula" name="cedula" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500"></div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Nombres *</label><input id="transp-nombres" name="nombres" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500"></div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Correo *</label><input id="transp-correo" name="correo" type="email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500"></div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cédula *</label>
+                        <input id="transp-cedula" name="cedula" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500" placeholder="10 o 13 dígitos" maxlength="13">
+                        <p id="transp-cedula-error" class="error-message">Cédula inválida (10 o 13 dígitos).</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nombres *</label>
+                        <input id="transp-nombres" name="nombres" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500" placeholder="Nombres completos">
+                        <p id="transp-nombres-error" class="error-message">Solo letras y espacios (mín. 3 caracteres).</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Correo *</label>
+                        <input id="transp-correo" name="correo" type="email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500" placeholder="correo@ejemplo.com">
+                        <p id="transp-correo-error" class="error-message">Correo electrónico inválido.</p>
+                    </div>
                     <div id="div-password">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña *</label>
                         <div class="flex gap-2">
@@ -144,8 +170,16 @@
                         </div>
                         <p class="text-xs text-red-500 mt-1">⚠️ Copia esta contraseña. NO se volverá a mostrar.</p>
                     </div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Placa</label><input id="transp-placa" name="placa_vehiculo" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 uppercase"></div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Capacidad (Ton)</label><input id="transp-capacidad" name="capacidad_ton" type="number" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500"></div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Placa</label>
+                        <input id="transp-placa" name="placa_vehiculo" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 uppercase" placeholder="ABC-1234" maxlength="10">
+                        <p id="transp-placa-error" class="error-message">Formato: 3 letras + guión + 3-4 dígitos (ABC-1234).</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Capacidad (Ton)</label>
+                        <input id="transp-capacidad" name="capacidad_ton" type="number" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500" placeholder="0.0" min="0">
+                        <p id="transp-capacidad-error" class="error-message">Debe ser un número positivo.</p>
+                    </div>
                 </div>
                 <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
                     <button type="button" onclick="closeModal('modal-transp')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
@@ -177,7 +211,7 @@
     <!-- MODAL: DESACTIVAR TRANSPORTISTA -->
     <div id="modal-delete" class="modal fixed inset-0 bg-black/50 items-center justify-center z-50">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-            <form id="form-delete" class="p-6">
+            <form id="form-delete" class="p-6" novalidate>
                 <input type="hidden" id="delete-id">
                 <div class="flex items-center justify-center w-12 h-12 rounded-full bg-yellow-100 mb-4 mx-auto">
                     <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m0 0v2m0-2h2m-2 0H10m9.364-7.364A9 9 0 1112 3a9 9 0 017.364 4.636z"></path></svg>
@@ -185,16 +219,21 @@
                 <h3 class="text-lg font-bold text-center text-gray-900 mb-2">Desactivar Transportista</h3>
                 <p class="text-sm text-center text-gray-500 mb-6">¿Dar de baja a <strong id="delete-name"></strong>?</p>
                 <div class="space-y-4">
-                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Razón *</label>
-                        <select name="razon" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-yellow-500 bg-white">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Razón *</label>
+                        <select name="razon" id="delete-razon" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-yellow-500 bg-white">
                             <option value="">Seleccione...</option>
                             <option value="TERMINACION_CONTRATO">Terminación de Contrato</option>
                             <option value="INCUMPLIMIENTO_DOCUMENTAL">Incumplimiento Documental</option>
                             <option value="FALTA_GRAVE">Falta Operativa Grave</option>
                             <option value="OTRO">Otro</option>
                         </select>
+                        <p id="delete-razon-error" class="error-message">Seleccione un motivo.</p>
                     </div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label><textarea name="observaciones" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-yellow-500 resize-none"></textarea></div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                        <textarea name="observaciones" id="delete-observaciones" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-yellow-500 resize-none"></textarea>
+                    </div>
                 </div>
                 <div class="flex justify-end gap-3 mt-6">
                     <button type="button" onclick="closeModal('modal-delete')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
@@ -211,14 +250,22 @@
                 <h3 class="text-lg font-bold text-gray-800">Modificar Ruta Operativa</h3>
                 <button onclick="closeModal('modal-ruta')" class="text-gray-400 hover:text-gray-600"><svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
             </div>
-            <form id="form-ruta" class="p-6">
+            <form id="form-ruta" class="p-6" novalidate>
                 <input type="hidden" id="ruta-viaje-id">
                 <div class="bg-blue-50 border border-blue-100 p-3 rounded-lg mb-4 text-sm text-blue-800">
                     <p>Modificando ruta del viaje <strong id="ruta-codigo"></strong>.</p>
                 </div>
                 <div class="space-y-4">
-                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Nueva Ruta *</label><input name="nueva_ruta_json" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500"></div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Motivo *</label><textarea name="motivo" required rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 resize-none"></textarea></div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nueva Ruta *</label>
+                        <input name="nueva_ruta_json" id="ruta-json" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500" placeholder="URL o GeoJSON de la nueva ruta">
+                        <p id="ruta-json-error" class="error-message">La nueva ruta es obligatoria.</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Motivo *</label>
+                        <textarea name="motivo" id="ruta-motivo" required rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 resize-none" placeholder="Razón del cambio de ruta"></textarea>
+                        <p id="ruta-motivo-error" class="error-message">El motivo es obligatorio.</p>
+                    </div>
                 </div>
                 <div class="flex justify-end gap-3 mt-6">
                     <button type="button" onclick="closeModal('modal-ruta')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
@@ -243,9 +290,60 @@
         let modeTransp = 'create';
         let verInactivos = false;
 
+        // --- VALIDACIONES ---
+        const validaciones = {
+            cedula: (val) => /^\d{10}$/.test(val) || /^\d{13}$/.test(val),
+            nombres: (val) => /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,}$/.test(val.trim()),
+            correo: (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim()),
+            placa: (val) => val === '' || /^[A-Z]{3}-\d{3,4}$/.test(val.trim()),
+            capacidad: (val) => val === '' || (!isNaN(val) && parseFloat(val) >= 0),
+        };
+
+        function showFieldError(inputId, errorId) {
+            const input = document.getElementById(inputId);
+            const error = document.getElementById(errorId);
+            if (input) input.classList.add('input-error');
+            if (error) error.classList.add('visible');
+        }
+
+        function hideFieldError(inputId, errorId) {
+            const input = document.getElementById(inputId);
+            const error = document.getElementById(errorId);
+            if (input) input.classList.remove('input-error');
+            if (error) error.classList.remove('visible');
+        }
+
+        function setupTranspValidation() {
+            const campos = [
+                { id: 'transp-cedula', errorId: 'transp-cedula-error', validate: validaciones.cedula },
+                { id: 'transp-nombres', errorId: 'transp-nombres-error', validate: validaciones.nombres },
+                { id: 'transp-correo', errorId: 'transp-correo-error', validate: validaciones.correo },
+                { id: 'transp-placa', errorId: 'transp-placa-error', validate: validaciones.placa },
+                { id: 'transp-capacidad', errorId: 'transp-capacidad-error', validate: validaciones.capacidad },
+            ];
+            campos.forEach(c => {
+                const el = document.getElementById(c.id);
+                if (!el) return;
+                el.addEventListener('input', () => {
+                    if (c.validate(el.value)) hideFieldError(c.id, c.errorId);
+                    else showFieldError(c.id, c.errorId);
+                });
+                el.addEventListener('blur', () => {
+                    if (el.value === '' && c.id !== 'transp-placa' && c.id !== 'transp-capacidad') showFieldError(c.id, c.errorId);
+                });
+            });
+        }
+
+        function clearTranspErrors() {
+            ['transp-cedula','transp-nombres','transp-correo','transp-placa','transp-capacidad'].forEach(id => {
+                hideFieldError(id, id + '-error');
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             await cargarTransportistas();
             await cargarViajesMonitoreo();
+            setupTranspValidation();
         });
 
         // --- TOAST ---
@@ -275,7 +373,6 @@
             document.getElementById('transp-password').value = Array.from({length:10}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
         }
 
-        // --- TABS ---
         function switchTab(tabId) {
             document.getElementById('view-transportistas').classList.add('hidden-view');
             document.getElementById('view-monitoreo').classList.add('hidden-view');
@@ -287,13 +384,11 @@
 
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-        // --- TOGGLE INACTIVOS ---
         function toggleInactivos() {
             verInactivos = document.getElementById('chk-ver-inactivos').checked;
             cargarTransportistas();
         }
 
-        // --- CARGAR DATOS ---
         async function cargarTransportistas() {
             try {
                 const resp = await fetch(`${API}/api/transportistas/?solo_activos=${!verInactivos}`, { headers: headers() });
@@ -310,7 +405,6 @@
             } catch (e) { console.error(e); }
         }
 
-        // --- RENDER ---
         function renderTransportistas() {
             const tbody = document.getElementById('tbody-transportistas');
             if (transportistasData.length === 0) {
@@ -366,9 +460,9 @@
             }).join('');
         }
 
-        // --- MODALES ---
         function openModalTransp(mode, id = null) {
             modeTransp = mode;
+            clearTranspErrors();
             const form = document.getElementById('form-transp');
             form.reset();
             document.getElementById('transp-id').value = id || '';
@@ -395,7 +489,6 @@
             document.getElementById('modal-transp').classList.add('active');
         }
 
-        // --- ACCIONES RÁPIDAS ---
         async function activarTransportista(id) {
             if (!confirm('¿Reactivar este transportista?')) return;
             try {
@@ -406,12 +499,13 @@
             } catch (err) { showToast(err.message, 'error'); }
         }
 
-        async function desactivarTransportista(id) {
+        function desactivarTransportista(id) {
             const t = transportistasData.find(x => x.id === id);
             if (!t) return;
             document.getElementById('form-delete').reset();
             document.getElementById('delete-id').value = id;
             document.getElementById('delete-name').textContent = t.nombres;
+            hideFieldError('delete-razon', 'delete-razon-error');
             document.getElementById('modal-delete').classList.add('active');
         }
 
@@ -440,20 +534,42 @@
             document.getElementById('form-ruta').reset();
             document.getElementById('ruta-viaje-id').value = id;
             document.getElementById('ruta-codigo').textContent = v.codigo;
+            hideFieldError('ruta-json', 'ruta-json-error');
+            hideFieldError('ruta-motivo', 'ruta-motivo-error');
             document.getElementById('modal-ruta').classList.add('active');
         }
 
-        // --- FORMULARIOS ---
+        // --- FORMULARIOS CON VALIDACIÓN ---
         document.getElementById('form-transp').addEventListener('submit', async function(e) {
             e.preventDefault();
+            clearTranspErrors();
+            let hasError = false;
+
+            const cedula = document.getElementById('transp-cedula').value.trim();
+            const nombres = document.getElementById('transp-nombres').value.trim();
+            const correo = document.getElementById('transp-correo').value.trim();
+            const placa = document.getElementById('transp-placa').value.trim();
+            const capacidad = document.getElementById('transp-capacidad').value;
+
+            if (!validaciones.cedula(cedula)) { showFieldError('transp-cedula', 'transp-cedula-error'); hasError = true; }
+            if (!validaciones.nombres(nombres)) { showFieldError('transp-nombres', 'transp-nombres-error'); hasError = true; }
+            if (!validaciones.correo(correo)) { showFieldError('transp-correo', 'transp-correo-error'); hasError = true; }
+            if (placa !== '' && !validaciones.placa(placa)) { showFieldError('transp-placa', 'transp-placa-error'); hasError = true; }
+            if (capacidad !== '' && !validaciones.capacidad(capacidad)) { showFieldError('transp-capacidad', 'transp-capacidad-error'); hasError = true; }
+
+            if (hasError) {
+                showToast('Corrija los errores antes de continuar.', 'error');
+                return;
+            }
+
             const formData = new FormData(this);
             if (modeTransp === 'create') {
-                const correo = formData.get('correo');
+                const correoVal = formData.get('correo');
                 const password = formData.get('password');
                 try {
                     const resp = await fetch(`${API}/api/transportistas/`, { method: 'POST', headers: { 'Authorization': `Bearer ${TOKEN}` }, body: formData });
                     if (!resp.ok) { const err = await resp.json(); throw new Error(err.detail); }
-                    document.getElementById('cred-correo').textContent = correo;
+                    document.getElementById('cred-correo').textContent = correoVal;
                     document.getElementById('cred-password').textContent = password;
                     closeModal('modal-transp');
                     document.getElementById('modal-credenciales').classList.add('active');
@@ -474,6 +590,13 @@
 
         document.getElementById('form-delete').addEventListener('submit', async function(e) {
             e.preventDefault();
+            const razon = document.getElementById('delete-razon').value;
+            if (!razon) {
+                showFieldError('delete-razon', 'delete-razon-error');
+                showToast('Seleccione un motivo.', 'error');
+                return;
+            }
+            hideFieldError('delete-razon', 'delete-razon-error');
             const id = document.getElementById('delete-id').value;
             const payload = Object.fromEntries(new FormData(this).entries());
             try {
@@ -487,8 +610,20 @@
 
         document.getElementById('form-ruta').addEventListener('submit', async function(e) {
             e.preventDefault();
+            const json = document.getElementById('ruta-json').value.trim();
+            const motivo = document.getElementById('ruta-motivo').value.trim();
+            let hasError = false;
+            if (!json) { showFieldError('ruta-json', 'ruta-json-error'); hasError = true; }
+            if (!motivo) { showFieldError('ruta-motivo', 'ruta-motivo-error'); hasError = true; }
+            if (hasError) {
+                showToast('Complete todos los campos obligatorios.', 'error');
+                return;
+            }
+            hideFieldError('ruta-json', 'ruta-json-error');
+            hideFieldError('ruta-motivo', 'ruta-motivo-error');
+
             const id = document.getElementById('ruta-viaje-id').value;
-            const payload = Object.fromEntries(new FormData(this).entries());
+            const payload = { nueva_ruta_json: json, motivo: motivo };
             try {
                 const resp = await fetch(`${API}/api/monitoreo/viajes/${id}/ruta`, { method: 'PATCH', headers: headers(), body: JSON.stringify(payload) });
                 if (!resp.ok) { const err = await resp.json(); throw new Error(err.detail); }

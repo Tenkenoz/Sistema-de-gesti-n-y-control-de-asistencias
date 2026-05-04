@@ -37,14 +37,26 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        .input-error {
+            border-color: #ef4444 !important;
+            ring-color: #ef4444 !important;
+        }
+        .error-message {
+            color: #dc2626;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+        .error-message.visible {
+            display: block;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden font-sans">
 
-    <!-- Fondo decorativo -->
     <div class="absolute top-0 left-0 w-full h-64 bg-blue-900 transform -skew-y-6 origin-top-left -z-10 shadow-lg"></div>
 
-    <!-- Toast -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 hidden">
         <div id="toast" class="rounded-lg p-4 shadow-lg flex items-center bg-green-50 text-green-800 border-l-4 border-green-500">
             <svg id="toast-icon-success" class="h-5 w-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -57,7 +69,6 @@
         </div>
     </div>
 
-    <!-- Logo -->
     <div class="sm:mx-auto sm:w-full sm:max-w-md z-10">
         <div class="flex justify-center items-center text-white mb-6">
             <div class="bg-white p-3 rounded-xl shadow-md mr-3">
@@ -69,35 +80,45 @@
         </div>
     </div>
 
-    <!-- Contenedor Principal -->
     <div id="main-container" class="sm:mx-auto w-full sm:max-w-md transition-all duration-300 z-10">
         <div class="bg-white py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-gray-100 relative overflow-hidden">
             
-            <!-- VISTA: INICIAR SESIÓN -->
             <div id="view-login" class="animate-fade-in">
                 <div class="text-center mb-8">
                     <h2 class="text-2xl font-bold text-gray-800">Bienvenido a TransControl</h2>
                     <p class="text-gray-500 text-sm mt-2">Ingresa tus credenciales para continuar</p>
                 </div>
-                <form id="form-login" class="space-y-5">
+                <form id="form-login" class="space-y-5" novalidate>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Cédula o Correo</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                             </div>
-                            <input type="text" name="username" id="login-username" required class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="ej. 1712345678 o admin@correo.com">
+                            <input type="email" name="username" id="login-username" required 
+                                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" 
+                                   placeholder="ej. admin@transcontrol.ec"
+                                   autocomplete="email"
+                                   maxlength="254">
                         </div>
+                        <p id="login-username-error" class="error-message">Ingrese un correo electrónico válido.</p>
                     </div>
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                             </div>
-                            <input type="password" name="password" id="login-password" required class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="••••••••">
+                            <input type="password" name="password" id="login-password" required 
+                                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" 
+                                   placeholder="••••••••"
+                                   autocomplete="current-password"
+                                   minlength="8" maxlength="128">
                         </div>
+                        <p id="login-password-error" class="error-message">La contraseña debe tener al menos 8 caracteres.</p>
                     </div>
+
                     <div class="flex items-center justify-end">
                         <button type="button" onclick="switchView('recover')" class="text-sm text-blue-600 hover:text-blue-500 font-medium">¿Olvidaste tu contraseña?</button>
                     </div>
@@ -108,7 +129,6 @@
                 </form>
             </div>
 
-            <!-- VISTA: RECUPERAR CONTRASEÑA -->
             <div id="view-recover" class="hidden-view animate-fade-in">
                 <button onclick="switchView('login')" class="flex items-center text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors">
                     <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -121,10 +141,14 @@
                     <h2 class="text-2xl font-bold text-gray-800">Recuperar Contraseña</h2>
                     <p class="text-gray-500 text-sm mt-2">Ingresa tu correo y te enviaremos instrucciones.</p>
                 </div>
-                <form id="form-recover" class="space-y-5">
+                <form id="form-recover" class="space-y-5" novalidate>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
-                        <input type="email" name="correo" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="tu@correo.com">
+                        <input type="email" name="correo" id="recover-email" required 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" 
+                               placeholder="tu@correo.com"
+                               maxlength="254">
+                        <p id="recover-email-error" class="error-message">Ingrese un correo electrónico válido.</p>
                     </div>
                     <button type="submit" id="recover-btn" class="w-full py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors flex justify-center items-center">
                         <span id="recover-btn-text">Enviar Instrucciones</span>
@@ -140,11 +164,9 @@
         </div>
     </div>
 
-    <!-- SCRIPTS -->
     <script>
         const API_BASE_URL = 'http://localhost:8000';
 
-        // --- GESTIÓN DE VISTAS ---
         const views = {
             login: document.getElementById('view-login'),
             recover: document.getElementById('view-recover')
@@ -156,13 +178,13 @@
                 v.classList.add('hidden-view');
                 v.classList.remove('animate-fade-in');
             });
+            clearAllErrors();
             setTimeout(() => {
                 views[viewName].classList.remove('hidden-view');
                 views[viewName].classList.add('animate-fade-in');
             }, 50);
         }
 
-        // --- TOAST ---
         let toastTimeout;
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
@@ -194,7 +216,6 @@
             }, 4000);
         }
 
-        // --- SPINNER ---
         function setLoading(formId, isLoading) {
             const btn = document.getElementById(formId);
             const text = document.getElementById(formId + '-text');
@@ -214,7 +235,6 @@
             }
         }
 
-        // --- REDIRECCIÓN POR ROL ---
         function redirectByRole(rol) {
             localStorage.setItem('user_rol', rol);
             switch(rol) {
@@ -227,19 +247,142 @@
                 case 'TRANSPORTISTA':
                     window.location.href = 'views/transportista_view.html';
                     break;
-               
+                default:
+                    showToast('Rol no reconocido', 'error');
             }
         }
 
-        // --- LOGIN ---
+        function clearAllErrors() {
+            document.querySelectorAll('.error-message').forEach(el => el.classList.remove('visible'));
+            document.querySelectorAll('input').forEach(el => {
+                el.classList.remove('input-error');
+            });
+        }
+
+        function showFieldError(inputId, errorId) {
+            const input = document.getElementById(inputId);
+            const error = document.getElementById(errorId);
+            if (input) input.classList.add('input-error');
+            if (error) error.classList.add('visible');
+        }
+
+        function hideFieldError(inputId, errorId) {
+            const input = document.getElementById(inputId);
+            const error = document.getElementById(errorId);
+            if (input) input.classList.remove('input-error');
+            if (error) error.classList.remove('visible');
+        }
+
+        // Solo validación de email
+        function isValidEmail(value) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+        }
+
+        function isValidPassword(value) {
+            return value && value.length >= 8;
+        }
+
+        function validateEmailField() {
+            const input = document.getElementById('login-username');
+            const value = input.value.trim();
+            if (value === '') {
+                hideFieldError('login-username', 'login-username-error');
+                return true;
+            }
+            if (isValidEmail(value)) {
+                hideFieldError('login-username', 'login-username-error');
+                return true;
+            } else {
+                showFieldError('login-username', 'login-username-error');
+                return false;
+            }
+        }
+
+        function validatePasswordField() {
+            const input = document.getElementById('login-password');
+            const value = input.value;
+            if (value === '') {
+                hideFieldError('login-password', 'login-password-error');
+                return true;
+            }
+            if (isValidPassword(value)) {
+                hideFieldError('login-password', 'login-password-error');
+                return true;
+            } else {
+                showFieldError('login-password', 'login-password-error');
+                return false;
+            }
+        }
+
+        function validateRecoverEmailField() {
+            const input = document.getElementById('recover-email');
+            const value = input.value.trim();
+            if (value === '') {
+                hideFieldError('recover-email', 'recover-email-error');
+                return true;
+            }
+            if (isValidEmail(value)) {
+                hideFieldError('recover-email', 'recover-email-error');
+                return true;
+            } else {
+                showFieldError('recover-email', 'recover-email-error');
+                return false;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const usernameInput = document.getElementById('login-username');
+            const passwordInput = document.getElementById('login-password');
+            const recoverEmailInput = document.getElementById('recover-email');
+
+            if (usernameInput) {
+                usernameInput.addEventListener('input', validateEmailField);
+                usernameInput.addEventListener('blur', validateEmailField);
+            }
+            if (passwordInput) {
+                passwordInput.addEventListener('input', validatePasswordField);
+                passwordInput.addEventListener('blur', validatePasswordField);
+            }
+            if (recoverEmailInput) {
+                recoverEmailInput.addEventListener('input', validateRecoverEmailField);
+                recoverEmailInput.addEventListener('blur', validateRecoverEmailField);
+            }
+        });
+
         document.getElementById('form-login').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const username = document.getElementById('login-username').value.trim();
             const password = document.getElementById('login-password').value;
             
-            if (!username || !password) {
-                showToast('Complete todos los campos', 'error');
+            let hasError = false;
+
+            if (!username) {
+                showFieldError('login-username', 'login-username-error');
+                document.getElementById('login-username-error').textContent = 'Este campo es obligatorio.';
+                hasError = true;
+            } else if (!isValidEmail(username)) {
+                showFieldError('login-username', 'login-username-error');
+                document.getElementById('login-username-error').textContent = 'Ingrese un correo electrónico válido.';
+                hasError = true;
+            } else {
+                hideFieldError('login-username', 'login-username-error');
+            }
+
+            if (!password) {
+                showFieldError('login-password', 'login-password-error');
+                document.getElementById('login-password-error').textContent = 'Este campo es obligatorio.';
+                hasError = true;
+            } else if (!isValidPassword(password)) {
+                showFieldError('login-password', 'login-password-error');
+                document.getElementById('login-password-error').textContent = 'La contraseña debe tener al menos 8 caracteres.';
+                hasError = true;
+            } else {
+                hideFieldError('login-password', 'login-password-error');
+            }
+
+            if (hasError) {
+                showToast('Corrija los errores antes de continuar.', 'error');
                 return;
             }
             
@@ -258,8 +401,6 @@
                     throw new Error(data.detail || 'Error al iniciar sesión');
                 }
                 
-                console.log('✅ Login exitoso:', data);
-                
                 localStorage.setItem('access_token', data.access_token);
                 localStorage.setItem('user_id', data.id);
                 localStorage.setItem('user_rol', data.rol);
@@ -270,23 +411,30 @@
                 setTimeout(() => redirectByRole(data.rol), 1000);
                 
             } catch (error) {
-                console.error('❌ Error login:', error);
                 showToast(error.message || 'Error de conexión con el servidor', 'error');
             } finally {
                 setLoading('login-btn', false);
             }
         });
 
-        // --- RECUPERAR CONTRASEÑA ---
         document.getElementById('form-recover').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const correo = this.querySelector('input[name="correo"]').value.trim();
+            const correo = document.getElementById('recover-email').value.trim();
             
             if (!correo) {
-                showToast('Ingrese su correo electrónico', 'error');
+                showFieldError('recover-email', 'recover-email-error');
+                document.getElementById('recover-email-error').textContent = 'Este campo es obligatorio.';
+                showToast('Ingrese un correo electrónico.', 'error');
                 return;
             }
+            if (!isValidEmail(correo)) {
+                showFieldError('recover-email', 'recover-email-error');
+                document.getElementById('recover-email-error').textContent = 'Ingrese un correo electrónico válido.';
+                showToast('Formato de correo inválido.', 'error');
+                return;
+            }
+            hideFieldError('recover-email', 'recover-email-error');
             
             setLoading('recover-btn', true);
             
@@ -316,43 +464,30 @@
             }
         });
 
-        // --- VERIFICAR SESIÓN AL CARGAR (SIN BUCLE) ---
         document.addEventListener('DOMContentLoaded', async () => {
             const token = localStorage.getItem('access_token');
             const rol = localStorage.getItem('user_rol');
 
-            // Si no hay token, quedarse en el login
-            if (!token || !rol) {
-                return;
-            }
+            if (!token || !rol) return;
 
-            // Verificar que el token es válido consultando /api/auth/me
             try {
                 const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
                 if (!response.ok) {
-                    // Token inválido o expirado → limpiar storage
-                    console.warn('⚠️ Token inválido, limpiando sesión...');
                     localStorage.clear();
                     showToast('Tu sesión ha expirado. Inicia sesión nuevamente.', 'error');
                     return;
                 }
 
                 const userData = await response.json();
-
-                // Actualizar el rol por si cambió
                 if (userData.rol !== rol) {
                     localStorage.setItem('user_rol', userData.rol);
                 }
-
-                // Token válido → redirigir al dashboard
                 redirectByRole(userData.rol);
 
             } catch (error) {
-                // Error de conexión → quedarse en login
-                console.error('❌ Error verificando token:', error);
                 showToast('No se pudo conectar con el servidor.', 'error');
             }
         });

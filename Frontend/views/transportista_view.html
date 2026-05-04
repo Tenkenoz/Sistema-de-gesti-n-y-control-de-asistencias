@@ -17,6 +17,10 @@
         .modal.active { display: flex; animation: fadeIn 0.2s ease-out; }
         .spinner { border: 2px solid #fff; border-top: 2px solid transparent; border-radius: 50%; width: 16px; height: 16px; animation: spin 0.6s linear infinite; display: inline-block; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .input-error { border-color: #ef4444 !important; }
+        .error-message { color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem; display: none; }
+        .error-message.visible { display: block; }
+        .file-upload-area.drag-over { border-color: #14b8a6; background-color: #f0fdfa; }
     </style>
 </head>
 <body class="bg-slate-50 font-sans h-screen flex overflow-hidden">
@@ -30,23 +34,31 @@
         </div>
     </div>
 
-    <!-- MODAL: SUBIR DOCUMENTO INDIVIDUAL -->
+    <!-- MODAL: SUBIR DOCUMENTO -->
     <div id="modal-upload" class="modal fixed inset-0 bg-black/60 items-center justify-center z-50">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-slate-50">
                 <h3 class="text-lg font-bold text-gray-800">Subir Documento</h3>
                 <button onclick="closeModal('modal-upload')" class="text-gray-400 hover:text-gray-600"><svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
             </div>
-            <form id="form-upload" class="p-6">
+            <form id="form-upload" class="p-6" novalidate>
                 <input type="hidden" id="upload-tipo">
                 <p class="text-sm text-gray-600 mb-4">Subiendo: <strong id="upload-nombre"></strong></p>
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Archivo PDF *</label>
-                    <input type="file" id="upload-archivo" accept="application/pdf" required class="w-full text-sm border border-gray-300 rounded-lg p-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Archivo PDF * (máx. 2MB)</label>
+                    <div id="file-upload-area" class="file-upload-area border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-teal-400 transition-colors">
+                        <input type="file" id="upload-archivo" accept="application/pdf" required class="hidden">
+                        <p id="file-upload-text" class="text-sm text-gray-500">Arrastra un PDF aquí o haz clic para seleccionar</p>
+                        <p id="file-name-display" class="text-sm font-medium text-gray-700 mt-1 hidden"></p>
+                    </div>
+                    <p id="upload-error" class="error-message"></p>
                 </div>
                 <div class="flex justify-end gap-3">
                     <button type="button" onclick="closeModal('modal-upload')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700">Subir</button>
+                    <button type="submit" id="btn-upload-submit" class="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 flex items-center gap-2">
+                        <span id="upload-btn-text">Subir</span>
+                        <span id="upload-spinner" class="spinner hidden"></span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -84,22 +96,14 @@
 
     <!-- MAIN CONTENT -->
     <main class="flex-1 p-8 overflow-y-auto">
-        
-        <!-- VISTA: MI EXPEDIENTE -->
         <div id="view-documentos" class="animate-fade-in max-w-4xl mx-auto">
             <div class="mb-6">
                 <h2 class="text-2xl font-bold text-gray-800">Mi Expediente Operativo</h2>
                 <p class="text-sm text-gray-500 mt-1">Gestiona tu documentación obligatoria. Cada documento se revisa individualmente.</p>
             </div>
-
-            <!-- BANNER DE ESTADO -->
             <div id="expediente-banner"></div>
-
-            <!-- TARJETAS DE DOCUMENTOS -->
             <div id="documentos-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6"></div>
         </div>
-
-        <!-- VISTA: MI VIAJE ACTUAL -->
         <div id="view-viaje" class="hidden-view animate-fade-in max-w-4xl mx-auto">
             <div class="mb-6">
                 <h2 class="text-2xl font-bold text-gray-800">Mi Viaje Actual</h2>
@@ -109,27 +113,21 @@
         </div>
     </main>
 
-    <!-- SCRIPTS -->
     <script>
         const API = 'http://localhost:8000';
         const TOKEN = localStorage.getItem('access_token');
         const USER_NOMBRES = localStorage.getItem('user_nombres');
         const USER_ROL = localStorage.getItem('user_rol');
 
-        if (!TOKEN || USER_ROL !== 'TRANSPORTISTA') {
-            alert('Acceso no autorizado');
-            window.location.href = '../index.html';
-        }
+        if (!TOKEN || USER_ROL !== 'TRANSPORTISTA') { alert('Acceso no autorizado'); window.location.href = '../index.html'; }
 
-        const headers = (json = true) => ({
-            'Authorization': `Bearer ${TOKEN}`,
-            ...(json ? { 'Content-Type': 'application/json' } : {})
-        });
+        const headers = (json = true) => ({ 'Authorization': `Bearer ${TOKEN}`, ...(json ? { 'Content-Type': 'application/json' } : {}) });
 
         let miTransportistaId = null;
         let miPerfil = { nombres: USER_NOMBRES || 'Transportista', placa: '...' };
-        let misDocumentos = []; // Lista de documentos individuales
+        let misDocumentos = [];
         let miViaje = null;
+        let toastTimeout;
 
         const docsObligatorios = [
             { id: 'CEDULA', label: 'Cédula de Identidad', desc: 'Copia a color de ambos lados', icono: '🪪' },
@@ -139,16 +137,17 @@
             { id: 'REVISION_TECNICA', label: 'Revisión Técnica', desc: 'Aprobado anual', icono: '🔧' },
             { id: 'PERMISO_PESOS', label: 'Permiso de Pesos', desc: 'Otorgado por el MTOP', icono: '⚖️' }
         ];
+        const MAX_FILE_SIZE = 2 * 1024 * 1024;
+        const ALLOWED_TYPES = ['application/pdf'];
 
-        // --- INICIALIZACIÓN ---
         document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('perfil-nombre').textContent = USER_NOMBRES || 'Transportista';
             await cargarDatosTransportista();
             await cargarDocumentos();
             await cargarViaje();
+            setupFileUploadListeners();
         });
 
-        // --- CARGAR DATOS ---
         async function cargarDatosTransportista() {
             try {
                 const resp = await fetch(`${API}/api/auth/me`, { headers: headers() });
@@ -177,36 +176,29 @@
         async function cargarViaje() {
             if (!miTransportistaId) return;
             try {
-                const resp = await fetch(`${API}/api/viajes/?transportista_id=${miTransportistaId}`, { headers: headers() });
+                const resp = await fetch(`${API}/api/viajes/`, { headers: headers() });
                 const viajes = await resp.json();
-                miViaje = viajes.find(v => v.estado === 'TRANSPORTISTA_ASIGNADO' || v.estado === 'EN_EJECUCION') || null;
+                const misViajes = viajes.filter(v => v.transportista_id === miTransportistaId);
+                miViaje = misViajes.find(v => v.estado === 'TRANSPORTISTA_ASIGNADO' || v.estado === 'EN_EJECUCION') || null;
                 renderViaje();
             } catch (e) { console.error(e); }
         }
 
-        // --- TOAST ---
-        let toastTimeout;
         function showToast(msg, type = 'success') {
             const c = document.getElementById('toast-container');
             const t = document.getElementById('toast');
             document.getElementById('toast-message').textContent = msg;
-            t.className = type === 'error'
-                ? 'rounded-lg p-4 shadow-lg flex items-center bg-red-50 text-red-800 border-l-4 border-red-500'
-                : 'rounded-lg p-4 shadow-lg flex items-center bg-green-50 text-green-800 border-l-4 border-green-500';
+            t.className = type === 'error' ? 'rounded-lg p-4 shadow-lg flex items-center bg-red-50 text-red-800 border-l-4 border-red-500' : 'rounded-lg p-4 shadow-lg flex items-center bg-green-50 text-green-800 border-l-4 border-green-500';
             document.getElementById('toast-icon-success').classList.toggle('hidden', type === 'error');
             document.getElementById('toast-icon-error').classList.toggle('hidden', type !== 'error');
             c.classList.remove('hidden', 'animate-fade-out-up');
             c.classList.add('animate-fade-in-down');
             clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(() => {
-                c.classList.remove('animate-fade-in-down');
-                c.classList.add('animate-fade-out-up');
-                setTimeout(() => c.classList.add('hidden'), 300);
-            }, 4000);
+            toastTimeout = setTimeout(() => { c.classList.remove('animate-fade-in-down'); c.classList.add('animate-fade-out-up'); setTimeout(() => c.classList.add('hidden'), 300); }, 4000);
         }
 
         function cerrarSesion() { localStorage.clear(); window.location.href = '../index.html'; }
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); if (id === 'modal-upload') resetUploadForm(); }
 
         function switchTab(tabId) {
             document.getElementById('view-documentos').classList.add('hidden-view');
@@ -217,171 +209,114 @@
             document.getElementById(`tab-btn-${tabId}`).className = "w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors bg-teal-800 text-white";
         }
 
-        // --- RENDERIZAR DOCUMENTOS INDIVIDUALES ---
         function renderDocumentos() {
             const banner = document.getElementById('expediente-banner');
             const grid = document.getElementById('documentos-grid');
             const badge = document.getElementById('badge-alert');
-
-            // Contar estados
             const totalDocs = docsObligatorios.length;
             const aprobados = docsObligatorios.filter(d => misDocumentos.find(md => md.tipo === d.id && md.estado === 'APROBADO')).length;
             const rechazados = docsObligatorios.filter(d => misDocumentos.find(md => md.tipo === d.id && md.estado === 'RECHAZADO')).length;
             const pendientes = docsObligatorios.filter(d => misDocumentos.find(md => md.tipo === d.id && md.estado === 'PENDIENTE')).length;
-
-            // Badge de alerta
-            const hayProblemas = rechazados > 0 || (aprobados < totalDocs && pendientes === 0);
-            badge.classList.toggle('hidden', !hayProblemas);
-
-            // Banner
+            badge.classList.toggle('hidden', rechazados === 0 && aprobados === totalDocs);
             if (aprobados === totalDocs) {
                 banner.className = "bg-green-50 border border-green-200 rounded-xl p-4 flex items-center shadow-sm mb-4";
-                banner.innerHTML = `<div class="bg-green-100 p-2 rounded-full mr-3 text-green-600">✅</div><div><h3 class="font-bold text-green-800">¡Expediente Completo!</h3><p class="text-sm text-green-700">Todos tus documentos están aprobados. Puedes recibir viajes.</p></div>`;
+                banner.innerHTML = `<div class="bg-green-100 p-2 rounded-full mr-3 text-green-600">✅</div><div><h3 class="font-bold text-green-800">¡Expediente Completo!</h3><p class="text-sm text-green-700">Todos tus documentos están aprobados.</p></div>`;
             } else if (rechazados > 0) {
                 banner.className = "bg-red-50 border border-red-200 rounded-xl p-4 flex items-center shadow-sm mb-4";
-                banner.innerHTML = `<div class="bg-red-100 p-2 rounded-full mr-3 text-red-600">⚠️</div><div><h3 class="font-bold text-red-800">Documentos Rechazados (${rechazados})</h3><p class="text-sm text-red-700">Corrige los documentos marcados en rojo y vuelve a subirlos.</p></div>`;
+                banner.innerHTML = `<div class="bg-red-100 p-2 rounded-full mr-3 text-red-600">⚠️</div><div><h3 class="font-bold text-red-800">Documentos Rechazados (${rechazados})</h3><p class="text-sm text-red-700">Corrige los documentos marcados en rojo.</p></div>`;
             } else if (pendientes > 0) {
                 banner.className = "bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center shadow-sm mb-4";
-                banner.innerHTML = `<div class="bg-amber-100 p-2 rounded-full mr-3 text-amber-600">⏳</div><div><h3 class="font-bold text-amber-800">Documentos en Revisión (${pendientes})</h3><p class="text-sm text-amber-700">Secretaría está revisando tus documentos. Espera la confirmación.</p></div>`;
+                banner.innerHTML = `<div class="bg-amber-100 p-2 rounded-full mr-3 text-amber-600">⏳</div><div><h3 class="font-bold text-amber-800">Documentos en Revisión (${pendientes})</h3><p class="text-sm text-amber-700">Secretaría está revisando.</p></div>`;
             } else {
                 banner.className = "bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center shadow-sm mb-4";
-                banner.innerHTML = `<div class="bg-blue-100 p-2 rounded-full mr-3 text-blue-600">📤</div><div><h3 class="font-bold text-blue-800">Sube tu documentación</h3><p class="text-sm text-blue-700">Debes subir los 6 documentos obligatorios para ser habilitado.</p></div>`;
+                banner.innerHTML = `<div class="bg-blue-100 p-2 rounded-full mr-3 text-blue-600">📤</div><div><h3 class="font-bold text-blue-800">Sube tu documentación</h3><p class="text-sm text-blue-700">Debes subir los 6 documentos.</p></div>`;
             }
-
-            // Grid de documentos
-            grid.innerHTML = docsObligatorios.map(doc => {
-                const docData = misDocumentos.find(md => md.tipo === doc.id);
-                return renderCard(doc, docData);
-            }).join('');
+            grid.innerHTML = docsObligatorios.map(doc => renderCard(doc, misDocumentos.find(md => md.tipo === doc.id))).join('');
         }
 
         function renderCard(doc, docData) {
-            let bg, border, badgeColor, badgeText, estadoIcono, acciones, motivoHTML = '';
-
+            let bg, border, badgeColor, badgeText, acciones, motivoHTML = '';
             if (!docData) {
-                // FALTANTE
-                bg = 'bg-gray-50'; border = 'border-gray-300';
-                badgeColor = 'bg-gray-200 text-gray-600'; badgeText = 'Faltante';
-                estadoIcono = '❌';
+                bg = 'bg-gray-50'; border = 'border-gray-300'; badgeColor = 'bg-gray-200 text-gray-600'; badgeText = 'Faltante';
                 acciones = `<button onclick="openModalUpload('${doc.id}', '${doc.label}')" class="w-full mt-3 px-3 py-2 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700 font-medium">📤 Subir</button>`;
             } else if (docData.estado === 'APROBADO') {
-                bg = 'bg-green-50'; border = 'border-green-400';
-                badgeColor = 'bg-green-200 text-green-800'; badgeText = '✅ Aprobado';
-                estadoIcono = '✅';
+                bg = 'bg-green-50'; border = 'border-green-400'; badgeColor = 'bg-green-200 text-green-800'; badgeText = '✅ Aprobado';
                 acciones = `<button onclick="openModalUpload('${doc.id}', '${doc.label}')" class="w-full mt-3 px-3 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-100">🔄 Reenviar</button>`;
             } else if (docData.estado === 'RECHAZADO') {
-                bg = 'bg-red-50'; border = 'border-red-400';
-                badgeColor = 'bg-red-200 text-red-800'; badgeText = '❌ Rechazado';
-                estadoIcono = '❌';
+                bg = 'bg-red-50'; border = 'border-red-400'; badgeColor = 'bg-red-200 text-red-800'; badgeText = '❌ Rechazado';
                 motivoHTML = `<div class="mt-2 p-2 bg-red-100 rounded text-xs text-red-700"><strong>Motivo:</strong> ${docData.observacion || 'Sin especificar'}</div>`;
                 acciones = `<button onclick="openModalUpload('${doc.id}', '${doc.label}')" class="w-full mt-3 px-3 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 font-medium">🔄 Corregir y Reenviar</button>`;
             } else {
-                // PENDIENTE
-                bg = 'bg-amber-50'; border = 'border-amber-300';
-                badgeColor = 'bg-amber-200 text-amber-800'; badgeText = '⏳ Pendiente';
-                estadoIcono = '⏳';
+                bg = 'bg-amber-50'; border = 'border-amber-300'; badgeColor = 'bg-amber-200 text-amber-800'; badgeText = '⏳ Pendiente';
                 acciones = `<button onclick="openModalUpload('${doc.id}', '${doc.label}')" class="w-full mt-3 px-3 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-100">🔄 Reenviar</button>`;
             }
-
-            return `
-            <div class="rounded-xl border-2 ${border} ${bg} p-4 shadow-sm hover:shadow-md transition-shadow">
-                <div class="flex justify-between items-start mb-2">
-                    <span class="text-2xl">${doc.icono}</span>
-                    <span class="text-xs px-2 py-0.5 rounded-full font-bold ${badgeColor}">${badgeText}</span>
-                </div>
-                <h3 class="font-bold text-gray-800 text-sm">${doc.label}</h3>
-                <p class="text-xs text-gray-500 mt-1">${doc.desc}</p>
-                ${motivoHTML}
-                ${acciones}
-            </div>`;
+            return `<div class="rounded-xl border-2 ${border} ${bg} p-4 shadow-sm"><div class="flex justify-between items-start mb-2"><span class="text-2xl">${doc.icono}</span><span class="text-xs px-2 py-0.5 rounded-full font-bold ${badgeColor}">${badgeText}</span></div><h3 class="font-bold text-gray-800 text-sm">${doc.label}</h3><p class="text-xs text-gray-500 mt-1">${doc.desc}</p>${motivoHTML}${acciones}</div>`;
         }
 
-        // --- MODAL SUBIR DOCUMENTO INDIVIDUAL ---
+        function setupFileUploadListeners() {
+            const area = document.getElementById('file-upload-area');
+            const input = document.getElementById('upload-archivo');
+            if (!area || !input) return;
+            area.addEventListener('click', () => input.click());
+            input.addEventListener('change', () => { if (input.files[0]) handleFile(input.files[0]); });
+            area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('drag-over'); });
+            area.addEventListener('dragleave', () => area.classList.remove('drag-over'));
+            area.addEventListener('drop', e => { e.preventDefault(); area.classList.remove('drag-over'); if (e.dataTransfer.files[0]) { input.files = e.dataTransfer.files; handleFile(e.dataTransfer.files[0]); } });
+
+            function handleFile(file) {
+                const errorEl = document.getElementById('upload-error');
+                const text = document.getElementById('file-upload-text');
+                const nameDisplay = document.getElementById('file-name-display');
+                errorEl.classList.remove('visible'); input.classList.remove('input-error');
+                if (!ALLOWED_TYPES.includes(file.type)) { errorEl.textContent = 'Solo PDF.'; errorEl.classList.add('visible'); input.classList.add('input-error'); return; }
+                if (file.size > MAX_FILE_SIZE) { errorEl.textContent = `Máx 2MB.`; errorEl.classList.add('visible'); input.classList.add('input-error'); return; }
+                text.classList.add('hidden'); nameDisplay.textContent = `📄 ${file.name}`; nameDisplay.classList.remove('hidden');
+            }
+        }
+
+        function resetUploadForm() {
+            const input = document.getElementById('upload-archivo');
+            if (input) input.value = '';
+            document.getElementById('file-upload-text')?.classList.remove('hidden');
+            document.getElementById('file-name-display')?.classList.add('hidden');
+            document.getElementById('upload-error')?.classList.remove('visible');
+            document.getElementById('upload-spinner')?.classList.add('hidden');
+        }
+
         function openModalUpload(tipo, nombre) {
             document.getElementById('upload-tipo').value = tipo;
             document.getElementById('upload-nombre').textContent = nombre;
-            document.getElementById('form-upload').reset();
+            resetUploadForm();
             document.getElementById('modal-upload').classList.add('active');
         }
 
         document.getElementById('form-upload').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const tipo = document.getElementById('upload-tipo').value;
-            const archivoInput = document.getElementById('upload-archivo');
-            const archivo = archivoInput.files[0];
-
-            if (!archivo) return showToast('Selecciona un archivo PDF', 'error');
-
+            const archivo = document.getElementById('upload-archivo').files[0];
+            if (!archivo) return;
+            document.getElementById('upload-spinner').classList.remove('hidden');
             const formData = new FormData();
-            formData.append('tipo', tipo);
+            formData.append('tipo', document.getElementById('upload-tipo').value);
             formData.append('archivo', archivo);
-
             try {
-                const resp = await fetch(`${API}/api/transportistas/${miTransportistaId}/documentos`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${TOKEN}` },
-                    body: formData
-                });
-                if (!resp.ok) { const err = await resp.json(); throw new Error(err.detail); }
-                showToast('Documento subido correctamente');
+                const resp = await fetch(`${API}/api/transportistas/${miTransportistaId}/documentos`, { method: 'POST', headers: { 'Authorization': `Bearer ${TOKEN}` }, body: formData });
+                if (!resp.ok) throw new Error((await resp.json()).detail);
+                showToast('Documento subido');
                 closeModal('modal-upload');
                 await cargarDocumentos();
             } catch (err) { showToast(err.message, 'error'); }
+            finally { document.getElementById('upload-spinner').classList.add('hidden'); }
         });
 
-        // --- RENDERIZAR VIAJE ---
         function renderViaje() {
             const container = document.getElementById('container-viaje');
-            const totalDocs = docsObligatorios.length;
             const aprobados = docsObligatorios.filter(d => misDocumentos.find(md => md.tipo === d.id && md.estado === 'APROBADO')).length;
-
-            if (aprobados < totalDocs) {
-                container.innerHTML = `
-                    <div class="bg-white rounded-xl border border-dashed border-red-300 p-12 text-center text-red-500 shadow-sm">
-                        <svg class="h-12 w-12 mx-auto mb-3 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                        <p class="text-lg font-bold">Documentación Incompleta</p>
-                        <p class="text-sm mt-1 text-gray-500">Necesitas ${totalDocs} documentos aprobados. Tienes ${aprobados}.</p>
-                        <button onclick="switchTab('documentos')" class="mt-4 text-teal-600 font-medium hover:underline">Ir a mi expediente</button>
-                    </div>`;
+            if (aprobados < 6) {
+                container.innerHTML = `<div class="bg-white rounded-xl border border-dashed border-red-300 p-12 text-center"><p class="text-lg font-bold">Documentación Incompleta</p><button onclick="switchTab('documentos')" class="mt-4 text-teal-600">Ir a mi expediente</button></div>`;
                 return;
             }
-
-            if (!miViaje) {
-                container.innerHTML = `
-                    <div class="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center text-gray-500 shadow-sm">
-                        <p class="text-lg font-medium">No tienes viajes asignados.</p>
-                    </div>`;
-                return;
-            }
-
-            container.innerHTML = `
-                <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div class="bg-slate-800 text-white p-5 flex justify-between items-center">
-                        <div><p class="text-slate-300 text-xs font-bold uppercase">Orden de Viaje</p><h3 class="text-2xl font-bold">${miViaje.codigo}</h3></div>
-                        <span class="inline-block bg-teal-500 text-white text-xs px-3 py-1.5 rounded-full font-bold uppercase">${miViaje.estado.replace('_',' ')}</span>
-                    </div>
-                    <div class="p-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div>
-                                <h4 class="text-sm font-bold text-gray-400 uppercase mb-4">Ruta</h4>
-                                <div class="relative pl-6 space-y-6">
-                                    <div class="absolute top-2 left-2.5 w-0.5 h-[calc(100%-2rem)] bg-gray-200"></div>
-                                    <div class="relative"><div class="absolute -left-6 top-0.5 bg-white p-1 rounded-full border-2 border-blue-500"><div class="w-2 h-2 bg-blue-500 rounded-full"></div></div><p class="text-xs text-gray-500 uppercase">Origen</p><p class="font-medium">${miViaje.origen}</p></div>
-                                    <div class="relative"><div class="absolute -left-6 top-0.5 bg-white p-1 rounded-full border-2 border-teal-500"><div class="w-2 h-2 bg-teal-500 rounded-full"></div></div><p class="text-xs text-gray-500 uppercase">Destino</p><p class="font-medium">${miViaje.destino}</p></div>
-                                </div>
-                            </div>
-                            <div>
-                                <h4 class="text-sm font-bold text-gray-400 uppercase mb-4">Carga</h4>
-                                <div class="bg-gray-50 p-4 rounded-lg space-y-3">
-                                    <div class="flex justify-between"><span class="text-xs text-gray-500 uppercase">Mercancía</span><span class="font-medium">${miViaje.tipo_mercancia}</span></div>
-                                    <div class="flex justify-between"><span class="text-xs text-gray-500 uppercase">Peso</span><span class="font-medium">${parseFloat(miViaje.peso_total_kg).toLocaleString('es-ES')} kg</span></div>
-                                    ${miViaje.destinatario_nombre ? `<div class="flex justify-between border-t pt-2"><span class="text-xs text-gray-500 uppercase">Destinatario</span><span class="font-medium">${miViaje.destinatario_nombre}</span></div>` : ''}
-                                </div>
-                            </div>
-                        </div>
-                        ${miViaje.observaciones ? `<div class="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800"><strong>Instrucciones:</strong> ${miViaje.observaciones}</div>` : ''}
-                    </div>
-                </div>`;
+            if (!miViaje) { container.innerHTML = `<div class="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center"><p class="text-lg">No tienes viajes asignados.</p></div>`; return; }
+            container.innerHTML = `<div class="bg-white rounded-xl border shadow-sm overflow-hidden"><div class="bg-slate-800 text-white p-5"><p class="text-xs uppercase">Orden de Viaje</p><h3 class="text-2xl font-bold">${miViaje.codigo}</h3><span class="bg-teal-500 text-xs px-3 py-1 rounded-full">${miViaje.estado.replace('_',' ')}</span></div><div class="p-6 grid grid-cols-2 gap-8"><div><h4 class="text-sm font-bold uppercase mb-4">Ruta</h4><p class="text-xs uppercase">Origen</p><p class="font-medium">${miViaje.origen}</p><p class="text-xs uppercase mt-4">Destino</p><p class="font-medium">${miViaje.destino}</p></div><div><h4 class="text-sm font-bold uppercase mb-4">Carga</h4><div class="bg-gray-50 p-4 rounded space-y-3"><div class="flex justify-between"><span class="text-xs uppercase">Mercancía</span><span class="font-medium">${miViaje.tipo_mercancia}</span></div><div class="flex justify-between"><span class="text-xs uppercase">Peso</span><span class="font-medium">${parseFloat(miViaje.peso_total_kg).toLocaleString()} kg</span></div>${miViaje.destinatario_nombre?`<div class="flex justify-between border-t pt-2"><span class="text-xs uppercase">Destinatario</span><span class="font-medium">${miViaje.destinatario_nombre}</span></div>`:''}</div></div></div>${miViaje.observaciones?`<div class="mt-6 bg-amber-50 p-3 rounded text-sm"><strong>Instrucciones:</strong> ${miViaje.observaciones}</div>`:''}</div>`;
         }
     </script>
 </body>
