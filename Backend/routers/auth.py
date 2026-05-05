@@ -31,8 +31,8 @@ router = APIRouter(prefix="/api/auth", tags=["Autenticación"])
 
 # ── Configuración SMTP ────────────────────────────────────────────────────────
 
-CORREO_EMISOR = os.getenv("SMTP_USER", "obanderick@gmail.com")
-CLAVE_CORREO  = os.getenv("SMTP_PASS", "wkcbeiirqchurtft")
+CORREO_EMISOR = os.getenv("SMTP_USER")
+CLAVE_CORREO  = os.getenv("SMTP_PASS")
 
 
 def enviar_nueva_contrasena(destino: str, nueva_contrasena: str):
