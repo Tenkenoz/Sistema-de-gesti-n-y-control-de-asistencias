@@ -18,6 +18,8 @@
 
    cd ..
 
+   Poner las llaves .env en el backend
+
 ## ▶️ Primera ejecución
 
    npm install
