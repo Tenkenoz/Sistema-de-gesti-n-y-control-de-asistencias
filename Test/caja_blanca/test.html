@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Test - TransControl API (Todas las Vistas)</title>
+    <style>
+        body { font-family: monospace; max-width: 900px; margin: 20px auto; background: #f8f9fa; }
+        h1 { color: #1a56db; }
+        h2 { color: #1e40af; border-bottom: 2px solid #1e40af; padding-bottom: 5px; margin-top: 30px; }
+        .test { border: 1px solid #ccc; padding: 10px; margin: 8px 0; border-radius: 5px; background: white; }
+        .pass { background: #d4edda; border-color: #28a745; }
+        .fail { background: #f8d7da; border-color: #dc3545; }
+        button { padding: 8px 20px; cursor: pointer; margin: 5px; border-radius: 5px; border: none; color: white; font-weight: bold; }
+        .btn-login { background: #2563eb; }
+        .btn-coord { background: #0891b2; }
+        .btn-sec { background: #7c3aed; }
+        .btn-transp { background: #0d9488; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; font-size: 11px; max-height: 200px; overflow-y: auto; }
+        .summary { margin: 15px 0; padding: 10px; background: white; border-radius: 5px; }
+        .summary span { margin-right: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 TransControl - Pruebas de API (Todas las Vistas)</h1>
+    <p>API: <strong>http://localhost:8000</strong></p>
+    
+    <div class="summary">
+        <span>✅ Pasaron: <strong id="count-pass">0</strong></span>
+        <span>❌ Fallaron: <strong id="count-fail">0</strong></span>
+        <span>📊 Total: <strong id="count-total">0</strong></span>
+    </div>
+    <hr>
+
+    <button class="btn-login" onclick="runLoginTests()">🔐 Solo Login</button>
+    <button class="btn-coord" onclick="runCoordinadorTests()">🟦 Solo Coordinador</button>
+    <button class="btn-sec" onclick="runSecretariaTests()">🟪 Solo Secretaria</button>
+    <button class="btn-transp" onclick="runTransportistaTests()">🟩 Solo Transportista</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const API = 'http://localhost:8000';
+        const results = document.getElementById('results');
+        let tokenSecretaria = '';
+        let tokenCoordinador = '';
+        let tokenTransportista = '';
+        let passCount = 0;
+        let failCount = 0;
+
+        function log(test, pass, detail) {
+            if (pass) passCount++; else failCount++;
+            document.getElementById('count-pass').textContent = passCount;
+            document.getElementById('count-fail').textContent = failCount;
+            document.getElementById('count-total').textContent = passCount + failCount;
+            
+            results.innerHTML += `
+                <div class="test ${pass ? 'pass' : 'fail'}">
+                    <strong>${pass ? '✅' : '❌'} ${test}</strong>
+                    <pre>${JSON.stringify(detail, null, 2)}</pre>
+                </div>`;
+        }
+
+        function clearResults(title) {
+            results.innerHTML = `<h2>${title}</h2>`;
+            passCount = 0;
+            failCount = 0;
+            document.getElementById('count-pass').textContent = '0';
+            document.getElementById('count-fail').textContent = '0';
+            document.getElementById('count-total').textContent = '0';
+        }
+
+        // ============================================================
+        // 🔐 PRUEBAS DE LOGIN
+        // ============================================================
+        async function runLoginTests() {
+            clearResults('🔐 Pruebas de Login');
+            
+            // L01: Login exitoso
+            try {
+                const resp = await fetch(`${API}/api/auth/login`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'secretaria@transcontrol.ec', password: 'Admin1234!' })
+                });
+                const data = await resp.json();
+                if (resp.ok) tokenSecretaria = data.access_token;
+                log('L01 - Login exitoso (Secretaria)', resp.ok && data.rol === 'SECRETARIA', { rol: data.rol, tiene_token: !!data.access_token });
+            } catch (e) { log('L01 - Login exitoso', false, e.message); }
+
+            // L02: Correo inválido
+            try {
+                const resp = await fetch(`${API}/api/auth/login`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'noesuncorreo', password: 'Admin1234!' })
+                });
+                const data = await resp.json();
+                log('L02 - Correo inválido', resp.status === 401, { status: resp.status, detail: data.detail });
+            } catch (e) { log('L02 - Correo inválido', false, e.message); }
+
+            // L03: Contraseña incorrecta
+            try {
+                const resp = await fetch(`${API}/api/auth/login`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'admin@transcontrol.ec', password: '123' })
+                });
+                const data = await resp.json();
+                log('L03 - Contraseña incorrecta', resp.status === 401, { status: resp.status });
+            } catch (e) { log('L03 - Contraseña incorrecta', false, e.message); }
+
+            // L04: Login Coordinador
+            try {
+                const resp = await fetch(`${API}/api/auth/login`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'coordinador@transcontrol.ec', password: 'Admin1234!' })
+                });
+                const data = await resp.json();
+                if (resp.ok) tokenCoordinador = data.access_token;
+                log('L04 - Login Coordinador', resp.ok && data.rol === 'COORDINADOR', { rol: data.rol });
+            } catch (e) { log('L04 - Login Coordinador', false, e.message); }
+
+            // L05: Login Transportista
+            try {
+                const resp = await fetch(`${API}/api/auth/login`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'transportista@transcontrol.ec', password: 'Admin1234!' })
+                });
+                const data = await resp.json();
+                if (resp.ok) tokenTransportista = data.access_token;
+                log('L05 - Login Transportista', resp.ok && data.rol === 'TRANSPORTISTA', { rol: data.rol });
+            } catch (e) { log('L05 - Login Transportista', false, e.message); }
+
+
+            // L07: Recuperar contraseña
+            try {
+                const resp = await fetch(`${API}/api/auth/recuperar-password`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ correo: 'obanderick@gmail.com' })
+                });
+                const data = await resp.json();
+                log('L07 - Recuperar contraseña', resp.ok, data);
+            } catch (e) { log('L07 - Recuperar contraseña', false, e.message); }
+        }
+
+        // ============================================================
+        // 🟦 PRUEBAS DE COORDINADOR
+        // ============================================================
+        async function runCoordinadorTests() {
+            if (!tokenCoordinador) {
+                try {
+                    const resp = await fetch(`${API}/api/auth/login`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: 'coordinador@transcontrol.ec', password: 'Admin1234!' })
+                    });
+                    const data = await resp.json();
+                    tokenCoordinador = data.access_token;
+                } catch (e) { log('Pre-login Coordinador', false, e.message); return; }
+            }
+            
+            clearResults('🟦 Pruebas de Coordinador');
+            const headers = { 'Authorization': `Bearer ${tokenCoordinador}` };
+
+            // C01: Listar transportistas activos
+            try {
+                const resp = await fetch(`${API}/api/transportistas/?solo_activos=true`, { headers });
+                const data = await resp.json();
+                log('C01 - Listar transportistas activos', resp.ok && data.length > 0, { count: data.length });
+            } catch (e) { log('C01 - Listar transportistas', false, e.message); }
+
+            // C02: Listar transportistas (todos)
+            try {
+                const resp = await fetch(`${API}/api/transportistas/?solo_activos=false`, { headers });
+                const data = await resp.json();
+                log('C02 - Listar todos (incluye inactivos)', resp.ok, { count: data.length });
+            } catch (e) { log('C02 - Listar todos', false, e.message); }
+
+            // C03: Ver viajes en ejecución
+            try {
+                const resp = await fetch(`${API}/api/monitoreo/viajes-en-ejecucion`, { headers });
+                const data = await resp.json();
+                log('C03 - Viajes en ejecución', resp.ok, { count: data.length });
+            } catch (e) { log('C03 - Viajes en ejecución', false, e.message); }
+
+            // C04: Modificar ruta (debe fallar si no hay viaje en ejecución)
+            try {
+                const resp = await fetch(`${API}/api/monitoreo/viajes/999/ruta`, {
+                    method: 'PATCH', headers: { ...headers, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nueva_ruta_json: '{}', motivo: 'Test' })
+                });
+                log('C04 - Modificar ruta (viaje inexistente)', resp.status === 404, { status: resp.status });
+            } catch (e) { log('C04 - Modificar ruta', false, e.message); }
+        }
+
+        // ============================================================
+        // 🟪 PRUEBAS DE SECRETARIA
+        // ============================================================
+        async function runSecretariaTests() {
+            if (!tokenSecretaria) {
+                try {
+                    const resp = await fetch(`${API}/api/auth/login`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: 'secretaria@transcontrol.ec', password: 'Admin1234!' })
+                    });
+                    const data = await resp.json();
+                    tokenSecretaria = data.access_token;
+                } catch (e) { log('Pre-login Secretaria', false, e.message); return; }
+            }
+
+            clearResults('🟪 Pruebas de Secretaria');
+            const headers = { 'Authorization': `Bearer ${tokenSecretaria}`, 'Content-Type': 'application/json' };
+
+            // S01: Listar viajes
+            try {
+                const resp = await fetch(`${API}/api/viajes/`, { headers });
+                const data = await resp.json();
+                log('S01 - Listar viajes', resp.ok, { count: data.length, estados: [...new Set(data.map(v => v.estado))] });
+            } catch (e) { log('S01 - Listar viajes', false, e.message); }
+
+            // S02: Listar transportistas
+            try {
+                const resp = await fetch(`${API}/api/transportistas/?solo_activos=true`, { headers });
+                const data = await resp.json();
+                log('S02 - Listar transportistas', resp.ok, { count: data.length });
+            } catch (e) { log('S02 - Listar transportistas', false, e.message); }
+
+            // S03: Ver documentos de un transportista
+            try {
+                const resp = await fetch(`${API}/api/transportistas/1/documentos`, { headers });
+                const data = await resp.json();
+                log('S03 - Ver documentos transportista 1', resp.ok, { docs_count: data.documentos?.length || 0 });
+            } catch (e) { log('S03 - Ver documentos', false, e.message); }
+
+            // S04: Intentar revisar documento inexistente
+            try {
+                const resp = await fetch(`${API}/api/transportistas/1/documentos/999/revisar`, {
+                    method: 'PUT', headers,
+                    body: JSON.stringify({ estado: 'APROBADO' })
+                });
+                log('S04 - Revisar doc inexistente', resp.status === 404, { status: resp.status });
+            } catch (e) { log('S04 - Revisar doc', false, e.message); }
+        }
+
+        // ============================================================
+        // 🟩 PRUEBAS DE TRANSPORTISTA
+        // ============================================================
+        async function runTransportistaTests() {
+            if (!tokenTransportista) {
+                try {
+                    const resp = await fetch(`${API}/api/auth/login`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: 'transportista@transcontrol.ec', password: 'Admin1234!' })
+                    });
+                    const data = await resp.json();
+                    tokenTransportista = data.access_token;
+                } catch (e) { log('Pre-login Transportista', false, e.message); return; }
+            }
+
+            clearResults('🟩 Pruebas de Transportista');
+            const headers = { 'Authorization': `Bearer ${tokenTransportista}` };
+
+            // T01: Perfil
+            try {
+                const resp = await fetch(`${API}/api/auth/me`, { headers });
+                const data = await resp.json();
+                log('T01 - Ver perfil', resp.ok && data.rol === 'TRANSPORTISTA', { nombres: data.nombres, rol: data.rol });
+            } catch (e) { log('T01 - Ver perfil', false, e.message); }
+
+            // T02: Listar transportistas (buscar su ID)
+            let miId = null;
+            try {
+                const resp = await fetch(`${API}/api/transportistas/?solo_activos=true`, { headers });
+                const data = await resp.json();
+                const respMe = await fetch(`${API}/api/auth/me`, { headers });
+                const me = await respMe.json();
+                const miTransp = data.find(t => t.usuario_id === me.id);
+                if (miTransp) miId = miTransp.id;
+                log('T02 - Encontrar mi transportista', !!miId, { miId });
+            } catch (e) { log('T02 - Encontrar transportista', false, e.message); }
+
+            // T03: Mis documentos
+            if (miId) {
+                try {
+                    const resp = await fetch(`${API}/api/transportistas/${miId}/documentos`, { headers });
+                    const data = await resp.json();
+                    const docs = data.documentos || [];
+                    const aprobados = docs.filter(d => d.estado === 'APROBADO').length;
+                    log('T03 - Mis documentos', resp.ok, { total: docs.length, aprobados });
+                } catch (e) { log('T03 - Mis documentos', false, e.message); }
+            }
+
+            // T04: Mis viajes
+            try {
+                const resp = await fetch(`${API}/api/viajes/`, { headers });
+                const data = await resp.json();
+                const misViajes = data.filter(v => v.transportista_id === miId);
+                log('T04 - Mis viajes', resp.ok, { total: data.length, mios: misViajes.length });
+            } catch (e) { log('T04 - Mis viajes', false, e.message); }
+
+            // T05: Health check
+            try {
+                const resp = await fetch(`${API}/health`);
+                const data = await resp.json();
+                log('T05 - Health Check', data.status === 'ok', data);
+            } catch (e) { log('T05 - Health Check', false, e.message); }
+        }
+
+ 
+    </script>
+</body>
+</html>

@@ -31,3 +31,21 @@
    docker-compose up -d
    
    npm start
+
+# 🚛 TransControl - Sistema de Gestión y Control de Viajes
+
+Sistema integral para gestión de transportistas, validación documental, control de despacho y monitoreo de rutas.
+
+---
+
+
+## 🔄 Flujo del Sistema
+
+1. Coordinador crea transportista → entrega credenciales
+2. Transportista sube 6 documentos obligatorios
+3. Secretaria revisa y aprueba/rechaza cada documento
+4. Transportista corrige rechazados → reenvía
+5. Secretaria aprueba todo → expediente completo
+6. Secretaria crea viaje → asigna transportista → inicia ruta 🚛
+
+---

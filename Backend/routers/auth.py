@@ -34,20 +34,24 @@ router = APIRouter(prefix="/api/auth", tags=["Autenticación"])
 CORREO_EMISOR = os.getenv("SMTP_USER", "obanderick@gmail.com")
 CLAVE_CORREO  = os.getenv("SMTP_PASS", "wkcbeiirqchurtft")
 
-def enviar_correo_smtp(destino: str, token: str):
-    try:
-        enlace = f"https://tuapp.com/reset-password?token={token}"
 
+def enviar_nueva_contrasena(destino: str, nueva_contrasena: str):
+    """
+    Envía la NUEVA CONTRASEÑA al correo del usuario.
+    """
+    try:
         msg = MIMEMultipart()
         msg["From"]    = CORREO_EMISOR
         msg["To"]      = destino
-        msg["Subject"] = "Recuperación de Contraseña"
+        msg["Subject"] = "TransControl - Nueva Contraseña"
 
         cuerpo = (
-            f"Hemos recibido una solicitud para restablecer tu contraseña.\n\n"
-            f"Haz clic en el siguiente enlace para continuar:\n{enlace}\n\n"
-            f"Este enlace expira en 2 horas.\n"
-            f"Si no solicitaste esto, ignora este mensaje."
+            f"Hola,\n\n"
+            f"Tu contraseña ha sido restablecida exitosamente.\n\n"
+            f"Tu nueva contraseña es:\n\n"
+            f"🔑 {nueva_contrasena}\n\n"
+            f"Ya puedes iniciar sesión con esta contraseña.\n\n"
+            f"Si no solicitaste este cambio, comunícate con el administrador."
         )
         msg.attach(MIMEText(cuerpo, "plain"))
 
@@ -58,9 +62,18 @@ def enviar_correo_smtp(destino: str, token: str):
             server.login(CORREO_EMISOR, CLAVE_CORREO)
             server.sendmail(CORREO_EMISOR, destino, msg.as_string())
 
+        print(f"✅ Nueva contraseña enviada a {destino}")
+        return True
+
     except Exception as e:
         print(f"[SMTP ERROR] {e}")
         raise
+
+
+def generar_contrasena(longitud=10):
+    """Genera una contraseña aleatoria sin caracteres confusos."""
+    chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+    return ''.join(secrets.choice(chars) for _ in range(longitud))
 
 
 # ── RF-1: Iniciar Sesión ───────────────────────────────────────────────────────
@@ -147,44 +160,31 @@ def registrar(body: UsuarioCreate, db: Session = Depends(get_db)):
 
 @router.post("/recuperar-password")
 def solicitar_recuperacion(body: RecuperarPasswordRequest, db: Session = Depends(get_db)):
+    """
+    Genera una NUEVA CONTRASEÑA, la guarda en la BD y la envía por correo.
+    """
     user = db.query(Usuario).filter(Usuario.correo == body.correo).first()
 
     # Siempre responder igual para no revelar si el correo existe
     if not user or not user.activo:
-        return {"mensaje": "Si el correo existe recibirás un enlace de recuperación"}
+        return {"mensaje": "Si el correo existe, recibirás tu nueva contraseña."}
 
-    token = secrets.token_urlsafe(48)
-    user.token_reset     = token
-    user.token_reset_exp = datetime.utcnow() + timedelta(hours=2)
+    # 1. Generar nueva contraseña
+    nueva = generar_contrasena()
+
+    # 2. Guardarla hasheada en la BD
+    user.hashed_password = hash_password(nueva)
+    user.token_reset = None
+    user.token_reset_exp = None
     db.commit()
 
+    # 3. Enviarla por correo
     try:
-        enviar_correo_smtp(user.correo, token)
+        enviar_nueva_contrasena(user.correo, nueva)
     except Exception:
         raise HTTPException(500, "Error al enviar el correo, intenta más tarde")
 
-    return {"mensaje": "Si el correo existe recibirás un enlace de recuperación"}
-
-
-@router.post("/reset-password")
-def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
-    user = (
-        db.query(Usuario)
-        .filter(
-            Usuario.token_reset == body.token,
-            Usuario.token_reset_exp > datetime.utcnow(),
-        )
-        .first()
-    )
-    if not user:
-        raise HTTPException(400, "Token inválido o expirado")
-
-    user.hashed_password = hash_password(body.nueva_password)
-    user.token_reset      = None
-    user.token_reset_exp  = None
-    db.commit()
-
-    return {"mensaje": "Contraseña actualizada correctamente"}
+    return {"mensaje": "Si el correo existe, recibirás tu nueva contraseña."}
 
 
 # ── Perfil del usuario actual ─────────────────────────────────────────────────
