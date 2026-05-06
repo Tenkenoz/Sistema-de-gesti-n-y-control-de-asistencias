@@ -4,7 +4,7 @@ RF-4.2  Editar Transportista
 RF-4.3  Eliminar Transportista (Desactivar)
 RF-4.3b Activar Transportista
 RF-4.3c Eliminar Permanentemente
-RF-4.4  Importar Documentación (Individual)
+RF-4.4  Importar Documentación (Individual) — PDF guardado en BD (BYTEA)
 RF-4.5  Consultar y Revisar Documentos
 """
 import os
@@ -15,6 +15,7 @@ from fastapi import (
     APIRouter, Depends, File, Form,
     HTTPException, Request, UploadFile, status,
 )
+from fastapi.responses import Response          # ← para servir bytes desde BD
 from sqlalchemy.orm import Session
 
 from core.config import settings
@@ -34,7 +35,6 @@ router = APIRouter(prefix="/api/transportistas", tags=["Transportistas"])
 # ── helpers ────────────────────────────────────────────────────────────────────
 
 def _extraer_estado(estado) -> str:
-    """Extrae el valor string de un Enum de SQLAlchemy"""
     return estado.value if hasattr(estado, 'value') else str(estado)
 
 
@@ -72,6 +72,8 @@ def _build_out(t: Transportista) -> dict:
                 "observacion": d.observacion,
                 "subido_en": d.subido_en,
                 "revisado_en": d.revisado_en,
+                # indica si el PDF ya está guardado en BD
+                "tiene_archivo": d.contenido_pdf is not None,
             }
             for d in t.documentos
         ],
@@ -184,7 +186,7 @@ def editar_transportista(
     return _build_out(t)
 
 
-# ── RF-4.3  Desactivar Transportista (baja lógica) ────────────────────────────
+# ── RF-4.3  Desactivar Transportista ─────────────────────────────────────────
 
 @router.delete("/{transportista_id}")
 def desactivar_transportista(
@@ -198,7 +200,6 @@ def desactivar_transportista(
     if not t:
         raise HTTPException(404, "Transportista no encontrado")
 
-    # Verificar sin viajes en ejecución
     en_ejecucion = (
         db.query(Viaje)
         .filter(
@@ -258,7 +259,6 @@ def eliminar_permanentemente(
     if not t:
         raise HTTPException(404, "Transportista no encontrado")
 
-    # Verificar sin viajes en ejecución
     en_ejecucion = (
         db.query(Viaje)
         .filter(
@@ -271,16 +271,9 @@ def eliminar_permanentemente(
         raise HTTPException(409, "El transportista tiene viajes activos. No se puede eliminar permanentemente.")
 
     usuario = t.usuario
-
-    # Eliminar documentos asociados
     db.query(Documento).filter(Documento.transportista_id == transportista_id).delete()
-
-    # Eliminar transportista
     db.delete(t)
-
-    # Eliminar usuario
     db.delete(usuario)
-
     db.commit()
 
     registrar_auditoria(
@@ -291,7 +284,7 @@ def eliminar_permanentemente(
     return {"mensaje": "Transportista eliminado permanentemente"}
 
 
-# ── RF-4.4  Importar Documentación (Individual) ───────────────────────────────
+# ── RF-4.4  Importar Documentación — PDF se guarda en BD (BYTEA) ──────────────
 
 @router.post("/{transportista_id}/documentos", status_code=201)
 async def importar_documento(
@@ -303,11 +296,15 @@ async def importar_documento(
     current_user=Depends(get_current_user),
     request: Request = None,
 ):
+    """
+    Sube un PDF y lo persiste directamente en PostgreSQL como BYTEA.
+    No se escribe ningún archivo en disco.
+    """
     t = db.query(Transportista).filter(Transportista.id == transportista_id).first()
     if not t:
         raise HTTPException(404, "Transportista no encontrado")
 
-    # Validar que solo el propio transportista o admin suban
+    # Solo el propio transportista o roles administrativos pueden subir
     rol_usuario = _extraer_estado(current_user.rol)
     if rol_usuario == "TRANSPORTISTA" and t.usuario_id != current_user.id:
         raise HTTPException(403, "No tiene permiso para subir documentos de otro transportista")
@@ -317,24 +314,23 @@ async def importar_documento(
     if tipo not in tipos_validos:
         raise HTTPException(400, f"Tipo inválido. Válidos: {', '.join(tipos_validos)}")
 
-    # Validar tamaño
-    content = await archivo.read()
-    max_bytes = settings.MAX_FILE_SIZE_MB * 1024 * 1024
-    if len(content) > max_bytes:
-        raise HTTPException(400, f"El archivo excede el límite de {settings.MAX_FILE_SIZE_MB}MB")
-
     # Validar formato PDF
     if archivo.content_type != "application/pdf":
         raise HTTPException(400, "Solo se aceptan archivos en formato PDF")
 
-    # Guardar archivo
-    folder = os.path.join(settings.UPLOAD_DIR, str(transportista_id))
-    os.makedirs(folder, exist_ok=True)
-    filename = f"{tipo}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{archivo.filename}"
-    filepath = os.path.join(folder, filename)
+    # Leer el contenido completo
+    content: bytes = await archivo.read()
 
-    with open(filepath, "wb") as f:
-        f.write(content)
+    # Validar tamaño (default 10 MB si no está en settings)
+    max_bytes = getattr(settings, "MAX_FILE_SIZE_MB", 10) * 1024 * 1024
+    if len(content) > max_bytes:
+        raise HTTPException(
+            400,
+            f"El archivo excede el límite de {getattr(settings, 'MAX_FILE_SIZE_MB', 10)} MB"
+        )
+
+    # Nombre del archivo (para descarga posterior)
+    nombre = f"{tipo}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{archivo.filename}"
 
     # Fecha de vencimiento
     venc = None
@@ -344,7 +340,7 @@ async def importar_documento(
         except ValueError:
             pass
 
-    # Si ya existe un documento del mismo tipo, actualizarlo
+    # Si ya existe un documento del mismo tipo → actualizar
     doc_existente = (
         db.query(Documento)
         .filter(
@@ -355,21 +351,23 @@ async def importar_documento(
     )
 
     if doc_existente:
-        doc_existente.nombre_archivo = filename
-        doc_existente.ruta_archivo = filepath
-        doc_existente.estado = EstadoDocEnum.PENDIENTE
+        doc_existente.nombre_archivo   = nombre
+        doc_existente.contenido_pdf    = content          # ← bytes en BD
+        doc_existente.ruta_archivo     = None             # ya no usamos disco
+        doc_existente.estado           = EstadoDocEnum.PENDIENTE
         doc_existente.fecha_vencimiento = venc
-        doc_existente.subido_en = datetime.utcnow()
-        doc_existente.revisado_en = None
-        doc_existente.observacion = None
-        doc_existente.revisado_por_id = None
+        doc_existente.subido_en        = datetime.utcnow()
+        doc_existente.revisado_en      = None
+        doc_existente.observacion      = None
+        doc_existente.revisado_por_id  = None
         doc = doc_existente
     else:
         doc = Documento(
             transportista_id=transportista_id,
             tipo=tipo,
-            ruta_archivo=filepath,
-            nombre_archivo=filename,
+            nombre_archivo=nombre,
+            contenido_pdf=content,                        # ← bytes en BD
+            ruta_archivo=None,
             estado=EstadoDocEnum.PENDIENTE,
             fecha_vencimiento=venc,
         )
@@ -380,10 +378,15 @@ async def importar_documento(
 
     registrar_auditoria(
         db, "SUBIR_DOCUMENTO", usuario_id=current_user.id,
-        descripcion=f"Documento {tipo} subido para transportista id={transportista_id}",
+        descripcion=f"Documento {tipo} subido para transportista id={transportista_id} ({len(content) // 1024} KB)",
         ip_address=request.client.host if request else None,
     )
-    return {"mensaje": "Documento subido correctamente", "documento_id": doc.id}
+    return {
+        "mensaje": "Documento subido y guardado en base de datos correctamente",
+        "documento_id": doc.id,
+        "nombre_archivo": doc.nombre_archivo,
+        "tamano_kb": len(content) // 1024,
+    }
 
 
 # ── RF-4.5  Consultar Documentos ──────────────────────────────────────────────
@@ -409,6 +412,7 @@ def consultar_documentos(
                 "observacion": d.observacion,
                 "subido_en": d.subido_en,
                 "revisado_en": d.revisado_en,
+                "tiene_archivo": d.contenido_pdf is not None,
             }
             for d in t.documentos
         ],
@@ -440,10 +444,10 @@ def revisar_documento(
     if body.estado == "RECHAZADO" and not body.observacion:
         raise HTTPException(400, "Debe proporcionar una observación cuando rechaza un documento")
 
-    doc.estado = body.estado
-    doc.observacion = body.observacion
+    doc.estado          = body.estado
+    doc.observacion     = body.observacion
     doc.revisado_por_id = current_user.id
-    doc.revisado_en = datetime.utcnow()
+    doc.revisado_en     = datetime.utcnow()
     if body.fecha_vencimiento:
         doc.fecha_vencimiento = body.fecha_vencimiento
 
@@ -455,3 +459,46 @@ def revisar_documento(
         ip_address=request.client.host if request else None,
     )
     return {"mensaje": f"Documento {body.estado.lower()} correctamente"}
+
+
+# ── Descargar / Ver PDF desde BD ──────────────────────────────────────────────
+
+@router.get("/{transportista_id}/documentos/{doc_id}/descargar")
+def descargar_documento(
+    transportista_id: int,
+    doc_id: int,
+    inline: bool = False,       # ?inline=true → abrir en el navegador; false → descargar
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """
+    Devuelve el PDF almacenado en la base de datos.
+
+    - ?inline=false  (default) → dispara descarga del archivo
+    - ?inline=true             → lo muestra dentro del navegador / visor
+    """
+    doc = (
+        db.query(Documento)
+        .filter(Documento.id == doc_id, Documento.transportista_id == transportista_id)
+        .first()
+    )
+    if not doc:
+        raise HTTPException(404, "Documento no encontrado")
+
+    if not doc.contenido_pdf:
+        raise HTTPException(
+            404,
+            "El archivo PDF no está disponible en la base de datos. "
+            "Es posible que haya sido subido con la versión anterior del sistema."
+        )
+
+    disposition = "inline" if inline else "attachment"
+
+    return Response(
+        content=doc.contenido_pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'{disposition}; filename="{doc.nombre_archivo}"',
+            "Content-Length": str(len(doc.contenido_pdf)),
+        },
+    )
