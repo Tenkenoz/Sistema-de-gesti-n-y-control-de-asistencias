@@ -88,11 +88,11 @@ def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)):
         .first()
     )
 
-    if not user:
+    if not user or not verify_password(body.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Cuenta no encontrada, verifique el nombre de usuario o correo electrónico",
-        )
+            detail="Correo y/o contraseña incorrectos",
+    )
 
     if not user.activo:
         raise HTTPException(
