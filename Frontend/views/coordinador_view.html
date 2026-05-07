@@ -17,24 +17,13 @@
         .modal.active { display: flex; animation: fadeIn 0.2s ease-out; }
         .spinner { border: 2px solid #fff; border-top: 2px solid transparent; border-radius: 50%; width: 16px; height: 16px; animation: spin 0.6s linear infinite; display: inline-block; }
         @keyframes spin { to { transform: rotate(360deg); } }
-
-        .input-error {
-            border-color: #ef4444 !important;
-            ring-color: #ef4444 !important;
-        }
-        .error-message {
-            color: #dc2626;
-            font-size: 0.75rem;
-            margin-top: 0.25rem;
-            display: none;
-        }
-        .error-message.visible {
-            display: block;
-        }
+        .input-error { border-color: #ef4444 !important; }
+        .error-message { color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem; display: none; }
+        .error-message.visible { display: block; }
     </style>
 </head>
 <body class="bg-slate-50 font-sans h-screen flex overflow-hidden">
-
+ 
     <!-- Toast -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 hidden">
         <div id="toast" class="rounded-lg p-4 shadow-lg flex items-center bg-green-50 text-green-800 border-l-4 border-green-500">
@@ -43,7 +32,7 @@
             <span id="toast-message" class="font-medium text-sm">Mensaje</span>
         </div>
     </div>
-
+ 
     <!-- MODAL: CREDENCIALES -->
     <div id="modal-credenciales" class="modal fixed inset-0 bg-black/60 items-center justify-center z-50">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -62,7 +51,7 @@
             </div>
         </div>
     </div>
-
+ 
     <!-- SIDEBAR -->
     <aside class="w-64 bg-blue-900 text-white flex flex-col shadow-xl z-10 flex-shrink-0">
         <div class="p-6 flex items-center border-b border-blue-800">
@@ -87,11 +76,9 @@
             </button>
         </div>
     </aside>
-
+ 
     <!-- MAIN CONTENT -->
     <main class="flex-1 p-8 overflow-y-auto">
-        
-        <!-- VISTA: GESTIÓN DE TRANSPORTISTAS -->
         <div id="view-transportistas" class="animate-fade-in">
             <div class="flex justify-between items-center mb-6">
                 <div>
@@ -126,8 +113,7 @@
                 </div>
             </div>
         </div>
-
-        <!-- VISTA: MONITOREO DE RUTAS -->
+ 
         <div id="view-monitoreo" class="hidden-view animate-fade-in">
             <div class="mb-6">
                 <h2 class="text-2xl font-bold text-gray-800">Monitoreo de Rutas</h2>
@@ -136,7 +122,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="grid-viajes"></div>
         </div>
     </main>
-
+ 
     <!-- MODAL: CREAR/EDITAR TRANSPORTISTA -->
     <div id="modal-transp" class="modal fixed inset-0 bg-black/50 items-center justify-center z-50">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden">
@@ -149,23 +135,23 @@
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Cédula *</label>
-                        <input id="transp-cedula" name="cedula" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500" placeholder="10 o 13 dígitos" maxlength="13">
-                        <p id="transp-cedula-error" class="error-message">Cédula inválida (10 o 13 dígitos).</p>
+                        <input id="transp-cedula" name="cedula" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500" placeholder="10 o 13 dígitos" maxlength="13" inputmode="numeric" pattern="[0-9]*">
+                        <p id="transp-cedula-error" class="error-message">Cédula inválida (10 o 13 dígitos válidos).</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Nombres *</label>
-                        <input id="transp-nombres" name="nombres" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500" placeholder="Nombres completos">
+                        <input id="transp-nombres" name="nombres" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500" placeholder="Nombres completos" maxlength="150">
                         <p id="transp-nombres-error" class="error-message">Solo letras y espacios (mín. 3 caracteres).</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Correo *</label>
-                        <input id="transp-correo" name="correo" type="email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500" placeholder="correo@ejemplo.com">
-                        <p id="transp-correo-error" class="error-message">Correo electrónico inválido.</p>
+                        <input id="transp-correo" name="correo" type="email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500" placeholder="correo@ejemplo.com" maxlength="254">
+                        <p id="transp-correo-error" class="error-message">Correo electrónico válido (sin caracteres especiales).</p>
                     </div>
                     <div id="div-password">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña *</label>
                         <div class="flex gap-2">
-                            <input id="transp-password" name="password" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 bg-gray-50" readonly>
+                            <input id="transp-password" name="password" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 bg-gray-50" readonly minlength="8">
                             <button type="button" onclick="generarPassword()" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-bold">🔄</button>
                         </div>
                         <p class="text-xs text-red-500 mt-1">⚠️ Copia esta contraseña. NO se volverá a mostrar.</p>
@@ -173,12 +159,12 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Placa</label>
                         <input id="transp-placa" name="placa_vehiculo" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 uppercase" placeholder="ABC-1234" maxlength="10">
-                        <p id="transp-placa-error" class="error-message">Formato: 3 letras + guión + 3-4 dígitos. Ej: ABC-1234, PBA1234, GYA-987.</p>
+                        <p id="transp-placa-error" class="error-message">Formato: 3 letras + guión opcional + 3-4 dígitos (ABC-1234).</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Capacidad (Ton)</label>
-                        <input id="transp-capacidad" name="capacidad_ton" type="number" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500" placeholder="0.0" min="0">
-                        <p id="transp-capacidad-error" class="error-message">Debe ser un número positivo.</p>
+                        <input id="transp-capacidad" name="capacidad_ton" type="number" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500" placeholder="0.0" min="0" max="100">
+                        <p id="transp-capacidad-error" class="error-message">Debe ser un número positivo (máx. 100 ton).</p>
                     </div>
                 </div>
                 <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
@@ -188,7 +174,7 @@
             </form>
         </div>
     </div>
-
+ 
     <!-- MODAL: CONFIRMAR ELIMINACIÓN PERMANENTE -->
     <div id="modal-delete-permanente" class="modal fixed inset-0 bg-black/60 items-center justify-center z-50">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
@@ -207,7 +193,7 @@
             </div>
         </div>
     </div>
-
+ 
     <!-- MODAL: DESACTIVAR TRANSPORTISTA -->
     <div id="modal-delete" class="modal fixed inset-0 bg-black/50 items-center justify-center z-50">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
@@ -232,7 +218,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
-                        <textarea name="observaciones" id="delete-observaciones" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-yellow-500 resize-none"></textarea>
+                        <textarea name="observaciones" id="delete-observaciones" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-yellow-500 resize-none" maxlength="500"></textarea>
                     </div>
                 </div>
                 <div class="flex justify-end gap-3 mt-6">
@@ -242,7 +228,7 @@
             </form>
         </div>
     </div>
-
+ 
     <!-- MODAL: MODIFICAR RUTA -->
     <div id="modal-ruta" class="modal fixed inset-0 bg-black/50 items-center justify-center z-50">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
@@ -258,12 +244,12 @@
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Nueva Ruta *</label>
-                        <input name="nueva_ruta_json" id="ruta-json" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500" placeholder="URL o GeoJSON de la nueva ruta">
+                        <input name="nueva_ruta_json" id="ruta-json" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500" placeholder="URL o GeoJSON de la nueva ruta" maxlength="2000">
                         <p id="ruta-json-error" class="error-message">La nueva ruta es obligatoria.</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Motivo *</label>
-                        <textarea name="motivo" id="ruta-motivo" required rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 resize-none" placeholder="Razón del cambio de ruta"></textarea>
+                        <textarea name="motivo" id="ruta-motivo" required rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 resize-none" placeholder="Razón del cambio de ruta" maxlength="500"></textarea>
                         <p id="ruta-motivo-error" class="error-message">El motivo es obligatorio.</p>
                     </div>
                 </div>
@@ -274,392 +260,499 @@
             </form>
         </div>
     </div>
-
-    <!-- SCRIPTS -->
+ 
+    <!-- MODAL: CONFIRMAR ACTIVAR TRANSPORTISTA -->
+    <div id="modal-activar" class="modal fixed inset-0 bg-black/60 items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden">
+            <div class="p-6 text-center">
+                <input type="hidden" id="modal-activar-id">
+                <div class="flex items-center justify-center w-14 h-14 rounded-full bg-green-100 mb-4 mx-auto">
+                    <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Reactivar Transportista</h3>
+                <p class="text-sm text-gray-500 mb-6">¿Desea activar nuevamente a <strong id="modal-activar-nombre"></strong>?</p>
+                <div class="flex justify-center gap-3">
+                    <button onclick="closeModal('modal-activar')" class="px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+                    <button onclick="confirmarActivar()" class="px-5 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">Sí, Activar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+ 
     <script>
-        const API = 'http://localhost:8000';
-        const TOKEN = localStorage.getItem('access_token');
-        const ROL = localStorage.getItem('user_rol');
+    const API = 'http://localhost:8000';
+    const TOKEN = localStorage.getItem('access_token');
+    const ROL = localStorage.getItem('user_rol');
 
-        if (!TOKEN || ROL !== 'COORDINADOR') { alert('Acceso no autorizado'); window.location.href = '../index.html'; }
+    if (!TOKEN || ROL !== 'COORDINADOR') { alert('Acceso no autorizado'); window.location.href = '../index.html'; }
 
-        const headers = (json = true) => ({ 'Authorization': `Bearer ${TOKEN}`, ...(json ? { 'Content-Type': 'application/json' } : {}) });
+    const headers = (json = true) => ({ 'Authorization': `Bearer ${TOKEN}`, ...(json ? { 'Content-Type': 'application/json' } : {}) });
 
-        let transportistasData = [];
-        let viajesData = [];
-        let modeTransp = 'create';
-        let verInactivos = false;
+    let transportistasData = [];
+    let viajesData = [];
+    let modeTransp = 'create';
+    let verInactivos = false;
 
-        // Validar cédula ecuatoriana (algoritmo oficial)
-function validarCedulaEcuatoriana(cedula) {
-    if (!/^\d{10}$/.test(cedula)) return false;
-    
-    const provincia = parseInt(cedula.substring(0, 2));
-    if (provincia < 1 || provincia > 24) return false;
-    
-    const digitoVerificador = parseInt(cedula.charAt(9));
-    let suma = 0;
-    
-    for (let i = 0; i < 9; i++) {
-        let digito = parseInt(cedula.charAt(i));
-        if (i % 2 === 0) {
-            digito *= 2;
-            if (digito > 9) digito -= 9;
+    // ── VALIDACIÓN DE CÉDULA ECUATORIANA ──────────────────────────────────
+    function validarCedulaEcuatoriana(cedula) {
+        if (!/^\d{10}$/.test(cedula)) return false;
+        if (/^(\d)\1{9}$/.test(cedula)) return false;
+        const provincia = parseInt(cedula.substring(0, 2));
+        if (provincia < 1 || provincia > 24) return false;
+        const digitoVerificador = parseInt(cedula.charAt(9));
+        let suma = 0;
+        for (let i = 0; i < 9; i++) {
+            let digito = parseInt(cedula.charAt(i));
+            if (i % 2 === 0) { digito *= 2; if (digito > 9) digito -= 9; }
+            suma += digito;
         }
-        suma += digito;
+        return ((10 - (suma % 10)) % 10) === digitoVerificador;
     }
-    
-    const verificadorCalculado = (10 - (suma % 10)) % 10;
-    return verificadorCalculado === digitoVerificador;
-}
 
-
-        // --- VALIDACIONES ---
-        const validaciones = {
-            cedula: (val) => validarCedulaEcuatoriana(val) || /^\d{13}$/.test(val),
-            nombres: (val) => /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,}$/.test(val.trim()),
-            correo: (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim()),
-            placa: (val) => {
-                                if (val === '') return true; // Opcional
-                                // Acepta: ABC1234, ABC-1234, ABC-123, PBA1234, PBA-123
-                                return /^[A-Z]{3}-?\d{3,4}$/.test(val.trim().toUpperCase());
-                                },
-            capacidad: (val) => val === '' || (!isNaN(val) && parseFloat(val) >= 0),
-        };
-
-        function showFieldError(inputId, errorId) {
-            const input = document.getElementById(inputId);
-            const error = document.getElementById(errorId);
-            if (input) input.classList.add('input-error');
-            if (error) error.classList.add('visible');
-        }
-
-        function hideFieldError(inputId, errorId) {
-            const input = document.getElementById(inputId);
-            const error = document.getElementById(errorId);
-            if (input) input.classList.remove('input-error');
-            if (error) error.classList.remove('visible');
-        }
-
-        function setupTranspValidation() {
-            const campos = [
-                { id: 'transp-cedula', errorId: 'transp-cedula-error', validate: validaciones.cedula },
-                { id: 'transp-nombres', errorId: 'transp-nombres-error', validate: validaciones.nombres },
-                { id: 'transp-correo', errorId: 'transp-correo-error', validate: validaciones.correo },
-                { id: 'transp-placa', errorId: 'transp-placa-error', validate: validaciones.placa },
-                { id: 'transp-capacidad', errorId: 'transp-capacidad-error', validate: validaciones.capacidad },
-            ];
-            campos.forEach(c => {
-                const el = document.getElementById(c.id);
-                if (!el) return;
-                el.addEventListener('input', () => {
-                    if (c.validate(el.value)) hideFieldError(c.id, c.errorId);
-                    else showFieldError(c.id, c.errorId);
-                });
-                el.addEventListener('blur', () => {
-                    if (el.value === '' && c.id !== 'transp-placa' && c.id !== 'transp-capacidad') showFieldError(c.id, c.errorId);
-                });
-            });
-        }
-
-        function clearTranspErrors() {
-            ['transp-cedula','transp-nombres','transp-correo','transp-placa','transp-capacidad'].forEach(id => {
-                hideFieldError(id, id + '-error');
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            await cargarTransportistas();
-            await cargarViajesMonitoreo();
-            setupTranspValidation();
+    // ── VALIDACIÓN DE UNICIDAD DE PLACA ──────────────────────────────────
+    function placaUnica(placa, excludeId = null) {
+        const placaNormalizada = placa.trim().toUpperCase().replace(/-/g, '');
+        if (!placaNormalizada) return true;
+        return !transportistasData.some(t => {
+            if (excludeId && t.id === excludeId) return false;
+            const tPlaca = (t.placa_vehiculo || '').trim().toUpperCase().replace(/-/g, '');
+            return tPlaca === placaNormalizada;
         });
+    }
 
-        // --- TOAST ---
-        let toastTimeout;
-        function showToast(msg, type = 'success') {
-            const c = document.getElementById('toast-container');
-            const t = document.getElementById('toast');
-            document.getElementById('toast-message').textContent = msg;
-            t.className = type === 'error' 
-                ? 'rounded-lg p-4 shadow-lg flex items-center bg-red-50 text-red-800 border-l-4 border-red-500'
-                : 'rounded-lg p-4 shadow-lg flex items-center bg-green-50 text-green-800 border-l-4 border-green-500';
-            document.getElementById('toast-icon-success').classList.toggle('hidden', type === 'error');
-            document.getElementById('toast-icon-error').classList.toggle('hidden', type !== 'error');
-            c.classList.remove('hidden', 'animate-fade-out-up');
-            c.classList.add('animate-fade-in-down');
-            clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(() => {
-                c.classList.remove('animate-fade-in-down');
-                c.classList.add('animate-fade-out-up');
-                setTimeout(() => c.classList.add('hidden'), 300);
-            }, 4000);
-        }
-
-        function cerrarSesion() { localStorage.clear(); window.location.href = '../index.html'; }
-        function generarPassword() {
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-            document.getElementById('transp-password').value = Array.from({length:10}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
-        }
-
-        function switchTab(tabId) {
-            document.getElementById('view-transportistas').classList.add('hidden-view');
-            document.getElementById('view-monitoreo').classList.add('hidden-view');
-            document.getElementById('tab-btn-transportistas').className = "w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-blue-100 hover:bg-blue-800/50";
-            document.getElementById('tab-btn-monitoreo').className = "w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-blue-100 hover:bg-blue-800/50";
-            document.getElementById(`view-${tabId}`).classList.remove('hidden-view');
-            document.getElementById(`tab-btn-${tabId}`).className = "w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors bg-blue-800 text-white";
-        }
-
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
-        function toggleInactivos() {
-            verInactivos = document.getElementById('chk-ver-inactivos').checked;
-            cargarTransportistas();
-        }
-
-        async function cargarTransportistas() {
-            try {
-                const resp = await fetch(`${API}/api/transportistas/?solo_activos=${!verInactivos}`, { headers: headers() });
-                transportistasData = await resp.json();
-                renderTransportistas();
-            } catch (e) { console.error(e); }
-        }
-
-        async function cargarViajesMonitoreo() {
-            try {
-                const resp = await fetch(`${API}/api/monitoreo/viajes-en-ejecucion`, { headers: headers() });
-                viajesData = await resp.json();
-                renderViajes();
-            } catch (e) { console.error(e); }
-        }
-
-        function renderTransportistas() {
-            const tbody = document.getElementById('tbody-transportistas');
-            if (transportistasData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">No hay transportistas.</td></tr>';
-                return;
+    // ── REGLAS DE VALIDACIÓN ─────────────────────────────────────────────
+    const validaciones = {
+        cedula: (val) => {
+            if (!val) return false;
+            if (!/^\d{10}$/.test(val) && !/^\d{13}$/.test(val)) return false;
+            if (val.length === 10) return validarCedulaEcuatoriana(val);
+            if (val.length === 13) {
+                if (/^(\d)\1{12}$/.test(val)) return false;
+                return val.substring(10, 13) === "001";
             }
-            tbody.innerHTML = transportistasData.map(t => {
-                const docBadge = t.estado_documentacion === 'APROBADO' ? 'bg-green-100 text-green-800' : t.estado_documentacion === 'PENDIENTE' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800';
-                const docText = t.estado_documentacion === 'APROBADO' ? 'Aprobado' : t.estado_documentacion === 'PENDIENTE' ? 'Pendiente' : t.estado_documentacion === 'RECHAZADO' ? 'Rechazado' : 'Sin Docs';
-                const estadoBadge = t.activo ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600';
-                const estadoText = t.activo ? 'Activo' : 'Inactivo';
-                return `
-                <tr class="bg-white border-b hover:bg-gray-50 ${!t.activo ? 'opacity-60' : ''}">
-                    <td class="px-6 py-4 font-medium text-gray-900">${t.nombres}</td>
-                    <td class="px-6 py-4 text-gray-500">${t.cedula}</td>
-                    <td class="px-6 py-4"><span class="text-xs px-2.5 py-0.5 rounded-full font-medium ${estadoBadge}">${estadoText}</span></td>
-                    <td class="px-6 py-4"><span class="text-xs px-2.5 py-0.5 rounded-full font-medium ${docBadge}">${docText}</span></td>
-                    <td class="px-6 py-4 text-right space-x-1">
-                        ${t.activo 
+            return false;
+        },
+        nombres: (val) => /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,150}$/.test(val.trim()),
+        correo: (val) => /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(val.trim()),
+        placa: (val) => val === '' || /^[A-Z]{3}-?\d{3,4}$/.test(val.trim().toUpperCase()),
+        capacidad: (val) => val === '' || (!isNaN(val) && parseFloat(val) >= 0 && parseFloat(val) <= 100 && !/[eE]/.test(val)),
+    };
+
+    function showFieldError(inputId, errorId, customMsg = null) {
+        const input = document.getElementById(inputId);
+        const error = document.getElementById(errorId);
+        if (input) input.classList.add('input-error');
+        if (error) {
+            if (customMsg) error.textContent = customMsg;
+            error.classList.add('visible');
+        }
+    }
+
+    function hideFieldError(inputId, errorId) {
+        const input = document.getElementById(inputId);
+        const error = document.getElementById(errorId);
+        if (input) input.classList.remove('input-error');
+        if (error) error.classList.remove('visible');
+    }
+
+    function clearTranspErrors() {
+        ['transp-cedula','transp-nombres','transp-correo','transp-placa','transp-capacidad'].forEach(id => hideFieldError(id, id + '-error'));
+    }
+
+    function setupTranspValidation() {
+        const campos = [
+            { id: 'transp-cedula',    errorId: 'transp-cedula-error',    validate: validaciones.cedula,    msg: 'Cédula ecuatoriana inválida (10 dígitos) o RUC (13 dígitos terminado en 001).' },
+            { id: 'transp-nombres',   errorId: 'transp-nombres-error',   validate: validaciones.nombres,   msg: 'Solo letras y espacios (mín. 3 caracteres).' },
+            { id: 'transp-correo',    errorId: 'transp-correo-error',    validate: validaciones.correo,    msg: 'Correo electrónico válido (sin caracteres especiales).' },
+            { id: 'transp-placa',     errorId: 'transp-placa-error',     validate: validaciones.placa,     msg: 'Formato: 3 letras + guión opcional + 3-4 dígitos (ABC-1234).' },
+            { id: 'transp-capacidad', errorId: 'transp-capacidad-error', validate: validaciones.capacidad, msg: 'Debe ser un número positivo (máx. 100 ton).' },
+        ];
+        campos.forEach(c => {
+            const el = document.getElementById(c.id);
+            if (!el) return;
+            el.addEventListener('input', () => {
+                if (c.validate(el.value)) hideFieldError(c.id, c.errorId);
+                else showFieldError(c.id, c.errorId, c.msg);
+            });
+            el.addEventListener('blur', () => {
+                if (el.value.trim() === '' && (c.id === 'transp-cedula' || c.id === 'transp-nombres' || c.id === 'transp-correo')) {
+                    showFieldError(c.id, c.errorId, 'Este campo es obligatorio.');
+                }
+            });
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await cargarTransportistas();
+        await cargarViajesMonitoreo();
+        setupTranspValidation();
+    });
+
+    let toastTimeout;
+    function showToast(msg, type = 'success') {
+        const c = document.getElementById('toast-container');
+        const t = document.getElementById('toast');
+        document.getElementById('toast-message').textContent = msg;
+        t.className = type === 'error'
+            ? 'rounded-lg p-4 shadow-lg flex items-center bg-red-50 text-red-800 border-l-4 border-red-500'
+            : 'rounded-lg p-4 shadow-lg flex items-center bg-green-50 text-green-800 border-l-4 border-green-500';
+        document.getElementById('toast-icon-success').classList.toggle('hidden', type === 'error');
+        document.getElementById('toast-icon-error').classList.toggle('hidden', type !== 'error');
+        c.classList.remove('hidden', 'animate-fade-out-up');
+        c.classList.add('animate-fade-in-down');
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => {
+            c.classList.remove('animate-fade-in-down');
+            c.classList.add('animate-fade-out-up');
+            setTimeout(() => c.classList.add('hidden'), 300);
+        }, 4000);
+    }
+
+    function cerrarSesion() { localStorage.clear(); window.location.href = '../index.html'; }
+
+    function generarPassword() {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+        document.getElementById('transp-password').value = Array.from({length:10}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+    }
+
+    function switchTab(tabId) {
+        ['transportistas','monitoreo'].forEach(t => {
+            document.getElementById(`view-${t}`).classList.add('hidden-view');
+            document.getElementById(`tab-btn-${t}`).className = "w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-blue-100 hover:bg-blue-800/50";
+        });
+        document.getElementById(`view-${tabId}`).classList.remove('hidden-view');
+        document.getElementById(`tab-btn-${tabId}`).className = "w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors bg-blue-800 text-white";
+    }
+
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    function toggleInactivos() {
+        verInactivos = document.getElementById('chk-ver-inactivos').checked;
+        cargarTransportistas();
+    }
+
+    async function cargarTransportistas() {
+        try {
+            const resp = await fetch(`${API}/api/transportistas/?solo_activos=${!verInactivos}`, { headers: headers() });
+            transportistasData = await resp.json();
+            renderTransportistas();
+        } catch (e) { console.error(e); }
+    }
+
+    async function cargarViajesMonitoreo() {
+        try {
+            const resp = await fetch(`${API}/api/monitoreo/viajes-en-ejecucion`, { headers: headers() });
+            viajesData = await resp.json();
+            renderViajes();
+        } catch (e) { console.error(e); }
+    }
+
+    function renderTransportistas() {
+        const tbody = document.getElementById('tbody-transportistas');
+        if (transportistasData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">No hay transportistas.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = transportistasData.map(t => {
+            const docBadge = t.estado_documentacion === 'APROBADO' ? 'bg-green-100 text-green-800' : t.estado_documentacion === 'PENDIENTE' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800';
+            const docText  = { APROBADO: 'Aprobado', PENDIENTE: 'Pendiente', RECHAZADO: 'Rechazado', SIN_DOCS: 'Sin Docs' }[t.estado_documentacion] || t.estado_documentacion;
+            const estadoBadge = t.activo ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600';
+            const estadoText  = t.activo ? 'Activo' : 'Inactivo';
+            return `
+            <tr class="bg-white border-b hover:bg-gray-50 ${!t.activo ? 'opacity-60' : ''}">
+                <td class="px-6 py-4 font-medium text-gray-900">${t.nombres}</td>
+                <td class="px-6 py-4 text-gray-500">${t.cedula}</td>
+                <td class="px-6 py-4"><span class="text-xs px-2.5 py-0.5 rounded-full font-medium ${estadoBadge}">${estadoText}</span></td>
+                <td class="px-6 py-4"><span class="text-xs px-2.5 py-0.5 rounded-full font-medium ${docBadge}">${docText}</span></td>
+                <td class="px-6 py-4 text-right">
+                    <div class="flex items-center justify-end gap-1">
+                        ${t.activo
                             ? `<button onclick="desactivarTransportista(${t.id})" class="text-yellow-600 hover:text-yellow-900 p-1" title="Desactivar"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg></button>`
                             : `<button onclick="activarTransportista(${t.id})" class="text-green-600 hover:text-green-900 p-1" title="Activar"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button>`
                         }
+                        <span class="text-gray-300">|</span>
                         <button onclick="openModalTransp('edit', ${t.id})" class="text-blue-600 hover:text-blue-900 p-1" title="Editar"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+                        <span class="text-gray-300">|</span>
                         <button onclick="confirmarEliminarPermanente(${t.id})" class="text-red-600 hover:text-red-900 p-1" title="Eliminar permanentemente"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-                    </td>
-                </tr>`;
-            }).join('');
-        }
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    }
 
-        function renderViajes() {
-            const grid = document.getElementById('grid-viajes');
-            if (viajesData.length === 0) {
-                grid.innerHTML = '<div class="col-span-full bg-white rounded border border-dashed border-gray-300 p-8 text-center text-gray-500">No hay viajes activos.</div>';
+    function renderViajes() {
+        const grid = document.getElementById('grid-viajes');
+        if (viajesData.length === 0) {
+            grid.innerHTML = '<div class="col-span-full bg-white rounded border border-dashed border-gray-300 p-8 text-center text-gray-500">No hay viajes activos.</div>';
+            return;
+        }
+        grid.innerHTML = viajesData.map(v => {
+            const isEjecucion = v.estado === 'EN_EJECUCION';
+            return `
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                <div class="flex justify-between items-start mb-4">
+                    <div><span class="text-xs font-bold text-gray-500 uppercase">${v.codigo}</span><h3 class="text-lg font-bold text-gray-800 mt-1">${v.estado.replace(/_/g,' ')}</h3></div>
+                    <div class="p-2 rounded-full ${isEjecucion ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'}"><svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg></div>
+                </div>
+                <div class="space-y-3 mb-5">
+                    <p class="text-sm"><span class="font-medium">Ruta:</span> ${v.origen} → ${v.destino}</p>
+                    <p class="text-sm"><span class="font-medium">Unidad:</span> ${v.transportista_nombres || 'N/A'} (${v.placa_vehiculo || 'N/A'})</p>
+                    ${v.horas_retraso > 0 ? `<div class="text-amber-600 bg-amber-50 p-2 rounded-lg text-sm">⚠️ Retraso: ${v.horas_retraso}h</div>` : ''}
+                </div>
+                <div class="pt-4 border-t border-gray-100 flex justify-end">
+                    <button onclick="openModalRuta(${v.id})" ${!isEjecucion ? 'disabled' : ''} class="text-sm font-medium px-4 py-2 rounded-lg ${isEjecucion ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'bg-gray-50 text-gray-400 cursor-not-allowed'}">Modificar Ruta</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ── MODALES ───────────────────────────────────────────────────────────
+    async function openModalTransp(mode, id = null) {
+        modeTransp = mode;
+        clearTranspErrors();
+        document.getElementById('form-transp').reset();
+        document.getElementById('transp-id').value = id || '';
+
+        const cedulaInput = document.getElementById('transp-cedula');
+        const nombresInput = document.getElementById('transp-nombres');
+        const correoInput = document.getElementById('transp-correo');
+        cedulaInput.readOnly = false;
+        nombresInput.readOnly = false;
+        correoInput.readOnly = false;
+        cedulaInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
+        nombresInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
+        correoInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
+
+        if (mode === 'create') {
+            document.getElementById('modal-transp-title').textContent = "Registrar Nuevo Transportista";
+            document.getElementById('div-password').style.display = 'block';
+            document.getElementById('transp-password').required = true;
+            generarPassword();
+        } else {
+            document.getElementById('modal-transp-title').textContent = "Editar Transportista";
+            document.getElementById('div-password').style.display = 'none';
+            document.getElementById('transp-password').required = false;
+
+            try {
+                const resp = await fetch(`${API}/api/transportistas/${id}`, { headers: headers() });
+                if (!resp.ok) throw new Error('No se pudo cargar el transportista');
+                const t = await resp.json();
+
+                document.getElementById('transp-cedula').value    = t.cedula || '';
+                document.getElementById('transp-nombres').value   = t.nombres || '';
+                document.getElementById('transp-correo').value    = t.correo || '';
+                document.getElementById('transp-placa').value     = t.placa_vehiculo || '';
+                document.getElementById('transp-capacidad').value = t.capacidad_ton || '';
+
+                // Solo la cédula queda bloqueada
+                cedulaInput.readOnly = true;
+                cedulaInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+                // nombres y correo quedan editables
+            } catch (err) {
+                showToast('Error al cargar los datos del transportista', 'error');
                 return;
             }
-            grid.innerHTML = viajesData.map(v => {
-                const isEjecucion = v.estado === 'EN_EJECUCION';
-                return `
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                    <div class="flex justify-between items-start mb-4">
-                        <div><span class="text-xs font-bold text-gray-500 uppercase">${v.codigo}</span><h3 class="text-lg font-bold text-gray-800 mt-1">${v.estado.replace('_',' ')}</h3></div>
-                        <div class="p-2 rounded-full ${isEjecucion ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'}"><svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg></div>
-                    </div>
-                    <div class="space-y-3 mb-5">
-                        <p class="text-sm"><span class="font-medium">Ruta:</span> ${v.origen} → ${v.destino}</p>
-                        <p class="text-sm"><span class="font-medium">Unidad:</span> ${v.transportista_nombres || 'N/A'} (${v.placa_vehiculo || 'N/A'})</p>
-                        ${v.horas_retraso > 0 ? `<div class="text-amber-600 bg-amber-50 p-2 rounded-lg text-sm">⚠️ Retraso: ${v.horas_retraso}h</div>` : ''}
-                    </div>
-                    <div class="pt-4 border-t border-gray-100 flex justify-end">
-                        <button onclick="openModalRuta(${v.id})" ${!isEjecucion ? 'disabled' : ''} class="text-sm font-medium px-4 py-2 rounded-lg ${isEjecucion ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'bg-gray-50 text-gray-400 cursor-not-allowed'}">Modificar Ruta</button>
-                    </div>
-                </div>`;
-            }).join('');
         }
+        document.getElementById('modal-transp').classList.add('active');
+    }
 
-        function openModalTransp(mode, id = null) {
-            modeTransp = mode;
-            clearTranspErrors();
-            const form = document.getElementById('form-transp');
-            form.reset();
-            document.getElementById('transp-id').value = id || '';
-            if (mode === 'create') {
-                document.getElementById('modal-transp-title').textContent = "Registrar Nuevo Transportista";
-                document.getElementById('div-password').style.display = 'block';
-                document.getElementById('transp-password').required = true;
-                document.getElementById('transp-cedula').disabled = false;
-                generarPassword();
-            } else {
-                document.getElementById('modal-transp-title').textContent = "Editar Transportista";
-                document.getElementById('div-password').style.display = 'none';
-                document.getElementById('transp-password').required = false;
-                const t = transportistasData.find(x => x.id === id);
-                if (t) {
-                    document.getElementById('transp-cedula').value = t.cedula;
-                    document.getElementById('transp-cedula').disabled = true;
-                    document.getElementById('transp-nombres').value = t.nombres;
-                    document.getElementById('transp-correo').value = t.correo;
-                    document.getElementById('transp-placa').value = t.placa_vehiculo || '';
-                    document.getElementById('transp-capacidad').value = t.capacidad_ton || '';
-                }
+    async function activarTransportista(id) {
+        document.getElementById('modal-activar-id').value = id;
+        const t = transportistasData.find(x => x.id === id);
+        document.getElementById('modal-activar-nombre').textContent = t ? t.nombres : '';
+        document.getElementById('modal-activar').classList.add('active');
+    }
+
+    async function confirmarActivar() {
+        const id = document.getElementById('modal-activar-id').value;
+        closeModal('modal-activar');
+        try {
+            const resp = await fetch(`${API}/api/transportistas/${id}/activar`, { method: 'PATCH', headers: headers() });
+            if (!resp.ok) { const e = await resp.json(); throw new Error(e.detail); }
+            showToast('Transportista activado correctamente');
+            await cargarTransportistas();
+        } catch (err) { showToast(err.message, 'error'); }
+    }
+
+    function desactivarTransportista(id) {
+        const t = transportistasData.find(x => x.id === id);
+        if (!t) return;
+        document.getElementById('form-delete').reset();
+        document.getElementById('delete-id').value = id;
+        document.getElementById('delete-name').textContent = t.nombres;
+        hideFieldError('delete-razon', 'delete-razon-error');
+        document.getElementById('modal-delete').classList.add('active');
+    }
+
+    function confirmarEliminarPermanente(id) {
+        const t = transportistasData.find(x => x.id === id);
+        if (!t) return;
+        document.getElementById('perm-delete-id').value = id;
+        document.getElementById('perm-delete-name').textContent = t.nombres;
+        document.getElementById('modal-delete-permanente').classList.add('active');
+    }
+
+    async function eliminarPermanente() {
+        const id = document.getElementById('perm-delete-id').value;
+        try {
+            const resp = await fetch(`${API}/api/transportistas/${id}/permanente`, { method: 'DELETE', headers: headers() });
+            if (!resp.ok) { const e = await resp.json(); throw new Error(e.detail); }
+            showToast('Transportista eliminado permanentemente');
+            closeModal('modal-delete-permanente');
+            await cargarTransportistas();
+        } catch (err) { showToast(err.message, 'error'); }
+    }
+
+    function openModalRuta(id) {
+        const v = viajesData.find(x => x.id === id);
+        if (!v) return;
+        document.getElementById('form-ruta').reset();
+        document.getElementById('ruta-viaje-id').value = id;
+        document.getElementById('ruta-codigo').textContent = v.codigo;
+        hideFieldError('ruta-json', 'ruta-json-error');
+        hideFieldError('ruta-motivo', 'ruta-motivo-error');
+        document.getElementById('modal-ruta').classList.add('active');
+    }
+
+    // ── FORMULARIOS ──────────────────────────────────────────────────────
+    document.getElementById('form-transp').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        clearTranspErrors();
+        let hasError = false;
+
+        const cedula    = document.getElementById('transp-cedula').value.trim();
+        const nombres   = document.getElementById('transp-nombres').value.trim();
+        const correo    = document.getElementById('transp-correo').value.trim();
+        const placa     = document.getElementById('transp-placa').value.trim();
+        const capacidad = document.getElementById('transp-capacidad').value;
+        const currentId = modeTransp === 'edit' ? parseInt(document.getElementById('transp-id').value) : null;
+
+        if (modeTransp === 'create') {
+            if (!validaciones.cedula(cedula)) {
+                showFieldError('transp-cedula', 'transp-cedula-error', 'Cédula ecuatoriana inválida (10 dígitos) o RUC (13 dígitos terminado en 001).');
+                hasError = true;
             }
-            document.getElementById('modal-transp').classList.add('active');
-        }
-
-        async function activarTransportista(id) {
-            if (!confirm('¿Reactivar este transportista?')) return;
-            try {
-                const resp = await fetch(`${API}/api/transportistas/${id}/activar`, { method: 'PATCH', headers: headers() });
-                if (!resp.ok) { const e = await resp.json(); throw new Error(e.detail); }
-                showToast('Transportista activado');
-                await cargarTransportistas();
-            } catch (err) { showToast(err.message, 'error'); }
-        }
-
-        function desactivarTransportista(id) {
-            const t = transportistasData.find(x => x.id === id);
-            if (!t) return;
-            document.getElementById('form-delete').reset();
-            document.getElementById('delete-id').value = id;
-            document.getElementById('delete-name').textContent = t.nombres;
-            hideFieldError('delete-razon', 'delete-razon-error');
-            document.getElementById('modal-delete').classList.add('active');
-        }
-
-        function confirmarEliminarPermanente(id) {
-            const t = transportistasData.find(x => x.id === id);
-            if (!t) return;
-            document.getElementById('perm-delete-id').value = id;
-            document.getElementById('perm-delete-name').textContent = t.nombres;
-            document.getElementById('modal-delete-permanente').classList.add('active');
-        }
-
-        async function eliminarPermanente() {
-            const id = document.getElementById('perm-delete-id').value;
-            try {
-                const resp = await fetch(`${API}/api/transportistas/${id}/permanente`, { method: 'DELETE', headers: headers() });
-                if (!resp.ok) { const e = await resp.json(); throw new Error(e.detail); }
-                showToast('Transportista eliminado permanentemente');
-                closeModal('modal-delete-permanente');
-                await cargarTransportistas();
-            } catch (err) { showToast(err.message, 'error'); }
-        }
-
-        function openModalRuta(id) {
-            const v = viajesData.find(x => x.id === id);
-            if (!v) return;
-            document.getElementById('form-ruta').reset();
-            document.getElementById('ruta-viaje-id').value = id;
-            document.getElementById('ruta-codigo').textContent = v.codigo;
-            hideFieldError('ruta-json', 'ruta-json-error');
-            hideFieldError('ruta-motivo', 'ruta-motivo-error');
-            document.getElementById('modal-ruta').classList.add('active');
-        }
-
-        // --- FORMULARIOS CON VALIDACIÓN ---
-        document.getElementById('form-transp').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            clearTranspErrors();
-            let hasError = false;
-
-            const cedula = document.getElementById('transp-cedula').value.trim();
-            const nombres = document.getElementById('transp-nombres').value.trim();
-            const correo = document.getElementById('transp-correo').value.trim();
-            const placa = document.getElementById('transp-placa').value.trim();
-            const capacidad = document.getElementById('transp-capacidad').value;
-
-            if (!validaciones.cedula(cedula)) { showFieldError('transp-cedula', 'transp-cedula-error'); hasError = true; }
-            if (!validaciones.nombres(nombres)) { showFieldError('transp-nombres', 'transp-nombres-error'); hasError = true; }
-            if (!validaciones.correo(correo)) { showFieldError('transp-correo', 'transp-correo-error'); hasError = true; }
-            if (placa !== '' && !validaciones.placa(placa)) { showFieldError('transp-placa', 'transp-placa-error'); hasError = true; }
-            if (capacidad !== '' && !validaciones.capacidad(capacidad)) { showFieldError('transp-capacidad', 'transp-capacidad-error'); hasError = true; }
-
-            if (hasError) {
-                showToast('Corrija los errores antes de continuar.', 'error');
-                return;
+            if (!validaciones.nombres(nombres)) {
+                showFieldError('transp-nombres', 'transp-nombres-error', 'Solo letras (mín. 3 caracteres).');
+                hasError = true;
             }
+            if (!validaciones.correo(correo)) {
+                showFieldError('transp-correo', 'transp-correo-error', 'Correo electrónico inválido (sin caracteres especiales).');
+                hasError = true;
+            }
+            if (this.querySelector('#transp-password').value.length < 8) {
+                showToast('La contraseña debe tener al menos 8 caracteres.', 'error');
+                hasError = true;
+            }
+        } else {
+            // En edición, validar nombres y correo (editables)
+            if (!validaciones.nombres(nombres)) {
+                showFieldError('transp-nombres', 'transp-nombres-error', 'Solo letras (mín. 3 caracteres).');
+                hasError = true;
+            }
+            if (!validaciones.correo(correo)) {
+                showFieldError('transp-correo', 'transp-correo-error', 'Correo electrónico inválido (sin caracteres especiales).');
+                hasError = true;
+            }
+        }
 
+        // Validación de formato de placa
+        if (placa !== '' && !validaciones.placa(placa)) {
+            showFieldError('transp-placa', 'transp-placa-error', 'Formato: ABC-1234 o ABC1234.');
+            hasError = true;
+        }
+
+        // Validación de unicidad de placa
+        if (placa !== '' && validaciones.placa(placa) && !placaUnica(placa, currentId)) {
+            showFieldError('transp-placa', 'transp-placa-error', 'Esta placa ya está registrada en otro transportista.');
+            hasError = true;
+        }
+
+        if (capacidad !== '' && !validaciones.capacidad(capacidad)) {
+            showFieldError('transp-capacidad', 'transp-capacidad-error', 'Valor entre 0 y 100 toneladas (sin notación científica).');
+            hasError = true;
+        }
+
+        if (hasError) { showToast('Corrija los errores antes de continuar.', 'error'); return; }
+
+        if (modeTransp === 'create') {
             const formData = new FormData(this);
-            if (modeTransp === 'create') {
-                const correoVal = formData.get('correo');
-                const password = formData.get('password');
-                try {
-                    const resp = await fetch(`${API}/api/transportistas/`, { method: 'POST', headers: { 'Authorization': `Bearer ${TOKEN}` }, body: formData });
-                    if (!resp.ok) { const err = await resp.json(); throw new Error(err.detail); }
-                    document.getElementById('cred-correo').textContent = correoVal;
-                    document.getElementById('cred-password').textContent = password;
-                    closeModal('modal-transp');
-                    document.getElementById('modal-credenciales').classList.add('active');
-                    await cargarTransportistas();
-                } catch (err) { return showToast(err.message, 'error'); }
-            } else {
-                const id = document.getElementById('transp-id').value;
-                const payload = { placa_vehiculo: formData.get('placa_vehiculo'), tipo_vehiculo: formData.get('tipo_vehiculo') || null, capacidad_ton: parseFloat(formData.get('capacidad_ton')) || null };
-                try {
-                    const resp = await fetch(`${API}/api/transportistas/${id}`, { method: 'PUT', headers: headers(), body: JSON.stringify(payload) });
-                    if (!resp.ok) { const err = await resp.json(); throw new Error(err.detail); }
-                    showToast('Transportista actualizado');
-                    closeModal('modal-transp');
-                    await cargarTransportistas();
-                } catch (err) { return showToast(err.message, 'error'); }
-            }
-        });
-
-        document.getElementById('form-delete').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const razon = document.getElementById('delete-razon').value;
-            if (!razon) {
-                showFieldError('delete-razon', 'delete-razon-error');
-                showToast('Seleccione un motivo.', 'error');
-                return;
-            }
-            hideFieldError('delete-razon', 'delete-razon-error');
-            const id = document.getElementById('delete-id').value;
-            const payload = Object.fromEntries(new FormData(this).entries());
+            const correoVal  = formData.get('correo');
+            const passwordVal = formData.get('password');
             try {
-                const resp = await fetch(`${API}/api/transportistas/${id}`, { method: 'DELETE', headers: headers(), body: JSON.stringify(payload) });
+                const resp = await fetch(`${API}/api/transportistas/`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${TOKEN}` },
+                    body: formData,
+                });
                 if (!resp.ok) { const err = await resp.json(); throw new Error(err.detail); }
-                showToast('Transportista desactivado');
-                closeModal('modal-delete');
+                document.getElementById('cred-correo').textContent    = correoVal;
+                document.getElementById('cred-password').textContent  = passwordVal;
+                closeModal('modal-transp');
+                document.getElementById('modal-credenciales').classList.add('active');
                 await cargarTransportistas();
             } catch (err) { showToast(err.message, 'error'); }
-        });
 
-        document.getElementById('form-ruta').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const json = document.getElementById('ruta-json').value.trim();
-            const motivo = document.getElementById('ruta-motivo').value.trim();
-            let hasError = false;
-            if (!json) { showFieldError('ruta-json', 'ruta-json-error'); hasError = true; }
-            if (!motivo) { showFieldError('ruta-motivo', 'ruta-motivo-error'); hasError = true; }
-            if (hasError) {
-                showToast('Complete todos los campos obligatorios.', 'error');
-                return;
-            }
-            hideFieldError('ruta-json', 'ruta-json-error');
-            hideFieldError('ruta-motivo', 'ruta-motivo-error');
-
-            const id = document.getElementById('ruta-viaje-id').value;
-            const payload = { nueva_ruta_json: json, motivo: motivo };
+        } else {
+            const id = document.getElementById('transp-id').value;
+            const payload = {
+                nombres: nombres || null,
+                correo: correo || null,
+                placa_vehiculo: placa || null,
+                capacidad_ton:  capacidad !== '' ? parseFloat(capacidad) : null,
+            };
             try {
-                const resp = await fetch(`${API}/api/monitoreo/viajes/${id}/ruta`, { method: 'PATCH', headers: headers(), body: JSON.stringify(payload) });
+                const resp = await fetch(`${API}/api/transportistas/${id}`, {
+                    method: 'PUT',
+                    headers: headers(),
+                    body: JSON.stringify(payload),
+                });
                 if (!resp.ok) { const err = await resp.json(); throw new Error(err.detail); }
-                showToast('Ruta actualizada');
-                closeModal('modal-ruta');
-                await cargarViajesMonitoreo();
+                showToast('Transportista actualizado correctamente');
+                closeModal('modal-transp');
+                await cargarTransportistas();
             } catch (err) { showToast(err.message, 'error'); }
-        });
-    </script>
+        }
+    });
+
+    document.getElementById('form-delete').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const razon = document.getElementById('delete-razon').value;
+        if (!razon) { showFieldError('delete-razon', 'delete-razon-error', 'Seleccione un motivo.'); showToast('Seleccione un motivo.', 'error'); return; }
+        hideFieldError('delete-razon', 'delete-razon-error');
+        const id = document.getElementById('delete-id').value;
+        const payload = { razon, observaciones: document.getElementById('delete-observaciones').value };
+        try {
+            const resp = await fetch(`${API}/api/transportistas/${id}`, { method: 'DELETE', headers: headers(), body: JSON.stringify(payload) });
+            if (!resp.ok) { const e = await resp.json(); throw new Error(e.detail); }
+            showToast('Transportista desactivado');
+            closeModal('modal-delete');
+            await cargarTransportistas();
+        } catch (err) { showToast(err.message, 'error'); }
+    });
+
+    document.getElementById('form-ruta').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const json   = document.getElementById('ruta-json').value.trim();
+        const motivo = document.getElementById('ruta-motivo').value.trim();
+        let hasError = false;
+        if (!json)   { showFieldError('ruta-json',   'ruta-json-error', 'La nueva ruta es obligatoria.');   hasError = true; }
+        if (!motivo) { showFieldError('ruta-motivo', 'ruta-motivo-error', 'El motivo es obligatorio.'); hasError = true; }
+        if (hasError) { showToast('Complete todos los campos obligatorios.', 'error'); return; }
+        hideFieldError('ruta-json', 'ruta-json-error');
+        hideFieldError('ruta-motivo', 'ruta-motivo-error');
+        const id = document.getElementById('ruta-viaje-id').value;
+        try {
+            const resp = await fetch(`${API}/api/monitoreo/viajes/${id}/ruta`, {
+                method: 'PATCH', headers: headers(),
+                body: JSON.stringify({ nueva_ruta_json: json, motivo }),
+            });
+            if (!resp.ok) { const err = await resp.json(); throw new Error(err.detail); }
+            showToast('Ruta actualizada');
+            closeModal('modal-ruta');
+            await cargarViajesMonitoreo();
+        } catch (err) { showToast(err.message, 'error'); }
+    });
+</script>
 </body>
 </html>

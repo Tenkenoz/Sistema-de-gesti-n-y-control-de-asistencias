@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 
 class TransportistaCreate(BaseModel):
@@ -10,10 +10,11 @@ class TransportistaCreate(BaseModel):
 
 
 class TransportistaUpdate(BaseModel):
+    nombres: Optional[str] = None          # ← NUEVO
+    correo: Optional[EmailStr] = None      # ← NUEVO
     placa_vehiculo: Optional[str] = None
     tipo_vehiculo: Optional[str] = None
     capacidad_ton: Optional[float] = None
-
 
 class DocumentoOut(BaseModel):
     id: int

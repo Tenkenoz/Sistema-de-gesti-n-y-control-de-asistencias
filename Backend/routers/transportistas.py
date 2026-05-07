@@ -172,11 +172,27 @@ def editar_transportista(
     if not t:
         raise HTTPException(404, "Transportista no encontrado")
 
-    for field, value in body.model_dump(exclude_none=True).items():
+    # 1. Actualizar campos del transportista (placa, capacidad, etc.)
+    for field, value in body.model_dump(exclude_none=True, exclude={"nombres", "correo"}).items():
         setattr(t, field, value)
+
+    # 2. Si se enviaron nombres o correo, actualizar el usuario asociado
+    usuario = t.usuario
+    if body.nombres is not None:
+        usuario.nombres = body.nombres
+    if body.correo is not None:
+        # Verificar que el correo no esté siendo usado por otro usuario
+        existe = db.query(Usuario).filter(
+            Usuario.correo == body.correo,
+            Usuario.id != usuario.id
+        ).first()
+        if existe:
+            raise HTTPException(400, "El correo ya se encuentra registrado en otro usuario")
+        usuario.correo = body.correo
 
     db.commit()
     db.refresh(t)
+    db.refresh(usuario)
 
     registrar_auditoria(
         db, "EDITAR_TRANSPORTISTA", usuario_id=current_user.id,
